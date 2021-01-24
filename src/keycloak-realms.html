@@ -1,0 +1,77 @@
+<script type="text/javascript">
+
+
+    RED
+        .nodes
+        .registerType('keycloak-realms', {
+            category: 'keycloak',
+            defaults: {
+                confignode: {
+                    value: "",
+                    type: "keycloak-config",
+                    required: false
+                },
+                realmName: {},              
+            },
+            inputs: 1,
+            outputs: 1,
+            color: "#DEBD5C",
+            label: function () {
+                if (this.name) {
+                    return this.name;
+                } else if (this.confignode.name) {
+                    return this.confignode.name;
+                }
+
+                return "realms";
+            },
+            icon: "font-awesome/fa-lock",
+            paletteLabel: "realms",
+            oneditprepare: function () {
+                var node = this;
+            }
+        });
+</script>
+
+<script type="text/x-red" data-template-name="keycloak-realms">
+    <style>
+        .event {
+            display:flex;
+        }
+        .event input {
+            flex:1
+        }
+        .event select {
+            flex:2
+        }
+        .event label {
+            min-width: 110px;
+            align-self: center;
+        }  
+        .padding-top {
+            padding-top: 10px;
+        }
+    </style>   
+
+    <div class="form-row event">        
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span>Name</span></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <hr/>
+    <div class="form-row event">
+        <label for="node-input-confignode"><i class="fa fa-globe"></i> <span>Config</span></label>
+        <input type="text" id="node-input-confignode">
+    </div>
+    <div class="form-row event">
+        <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
+        <input type="text" id="node-input-realmName">
+    </div>
+  
+
+    
+</script>
+
+<!-- Simple Help Text -->
+<script type="text/x-red" data-help-name="keycloak-realms">
+
+</script>

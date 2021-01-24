@@ -1,0 +1,64 @@
+<script type="text/javascript">
+    RED
+        .nodes
+        .registerType('keycloak-config', {
+            category: 'config',
+            defaults: {
+                baseUrl: {
+                    value: '',
+                },
+                name: {
+                    value: '',
+                },               
+            },
+            credentials: {
+                username: { type: "text"},
+                password: { type: "password"},
+            },
+            label: function () {
+                if (this.name) {
+                    return this.name;
+                }
+                return 'keycloak config';
+            },
+            oneditprepare: function () {
+                var node = this;
+
+
+            },
+        });
+</script>
+
+<script type="text/x-red" data-template-name="keycloak-config">
+    <div class="form-row">
+        <label for="node-config-input-name" style="width:160px !important">
+            <i class="fa fa-user"></i>
+            <span>Name:</span></label>
+        <input type="text" id="node-config-input-name" placeholder="" style="width:280px !important">
+    </div>
+    <hr/>
+    <div class="form-row" style="display:flex">
+        <label for="node-config-input-baseUrl" style="min-width:160px !important">
+            <i class="fa fa-link"></i>
+            <span>url to keycloak- server:</span></label>
+        <input type="text" id="node-config-input-baseUrl" placeholder="" style="width:100% !important">
+    </div>
+   
+    <div class="form-row">
+        <label for="node-config-input-username" style="width:160px !important">
+            <i class="fa fa-key"></i>
+            <span>username:</span></label>
+        <input type="text" id="node-config-input-username" placeholder="" style="width:280px !important">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-password" style="width:160px !important">
+            <i class="fa fa-key"></i>
+            <span>password:</span></label>
+        <input type="password" id="node-config-input-password" placeholder="" style="width:280px !important">
+    </div>
+</script>
+
+<script type="text/x-red" data-help-name="keycloak-config">
+
+
+</script>
