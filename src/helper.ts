@@ -1,7 +1,12 @@
 
 import { GrantTypes } from 'keycloak-admin/lib/utils/auth';
-import { Node } from 'node-red';
+import { Node, NodeMessageInFlow } from 'node-red';
 import ProtocolMapperRepresentation from 'keycloak-admin/lib/defs/protocolMapperRepresentation';
+import ClientRepresentation from 'keycloak-admin/lib/defs/clientRepresentation';
+import IdentityProviderRepresentation from 'keycloak-admin/lib/defs/identityProviderRepresentation';
+import RealmRepresentation from 'keycloak-admin/lib/defs/realmRepresentation';
+import ClientScopeRepresentation from 'keycloak-admin/lib/defs/clientScopeRepresentation';
+import ComponentRepresentation from 'keycloak-admin/lib/defs/componentRepresentation';
 
 
 export interface IcalNode extends Node {
@@ -11,21 +16,48 @@ export interface IcalNode extends Node {
 
 }
 
+
+export function isObject(item) {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+export function mergeDeep(target, ...sources) {
+    if (!sources.length) return target;
+    const source = sources.shift();
+
+    if (isObject(target) && isObject(source)) {
+        for (const key in source) {
+            if (isObject(source[key])) {
+                if (!target[key]) Object.assign(target, { [key]: {} });
+                mergeDeep(target[key], source[key]);
+            } else {
+                Object.assign(target, { [key]: source[key] });
+            }
+        }
+    }
+
+    return mergeDeep(target, ...sources);
+}
+
 export interface KeycloakConfig {
     protocolMappers: ProtocolMapperRepresentation[];
     protocol: string;
     scopeName: string;
     name: string;
-
     baseUrl: string
     realmName: string
-
     username: string
     password: string
     grantType: GrantTypes
     clientId: string
     action: string
-
+    id: string;
+    client: ClientRepresentation;
+    provider: IdentityProviderRepresentation;
+    realm: RealmRepresentation
+    scope: ClientScopeRepresentation
+    protocolMapper: ProtocolMapperRepresentation;
+    component:ComponentRepresentation
 }
 
 function deepen(obj) {
@@ -50,24 +82,13 @@ function deepen(obj) {
     return result;
 }
 
-
-
-export function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
-
-
-    const cloudConfig = {
-        baseUrl: config?.baseUrl,
-        realmName: node?.realmName || 'master',
-        username: config?.credentials?.username,
-        password: config?.credentials?.password,
-        grantType: config?.grantType || 'password',
-        clientId: config?.clientId || 'admin-cli',
-        name: msg?.name || config?.name,
-        action: msg?.action || node?.action || 'get'
-    } as KeycloakConfig;
-
-    return cloudConfig;
+export interface ClientMessage extends NodeMessageInFlow {
+    payload: {
+        client: ClientRepresentation;
+    }
 }
+
+
 
 
 

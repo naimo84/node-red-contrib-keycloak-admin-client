@@ -6,12 +6,18 @@
         .registerType('keycloak-client-scopes', {
             category: 'keycloak',
             defaults: {
+                name:{}   ,
                 confignode: {
                     value: "",
                     type: "keycloak-config",
                     required: false
                 },
-                realmName: {},              
+                realmName: {},   
+                action:{},
+                scope:{},
+                scopetype:{},
+                protocolMapper:{},
+                protocolMappertype:{}
             },
             inputs: 1,
             outputs: 1,
@@ -29,6 +35,14 @@
             paletteLabel: "client scopes",
             oneditprepare: function () {
                 var node = this;
+                $("#node-input-scope").typedInput({
+                    types: ["msg", "json"],
+                    typeField: "#node-input-scopetype"
+                }); 
+                $("#node-input-protocolMapper").typedInput({
+                    types: ["msg", "json"],
+                    typeField: "#node-input-protocolMappertype"
+                });
             }
         });
 </script>
@@ -66,8 +80,24 @@
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
     </div>
-  
-
+    <div class="form-row event">
+        <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
+        <select id="node-input-action">          
+          <option value="get">get</option>
+          <option value="create">create</option>
+          <option value="addProtocolMapper">addProtocolMapper</option>
+        </select>
+    </div>
+    <div class="form-row elastic">
+        <label for="node-input-scope"><i class="fa fa-globe"></i> <span>scope definition</span></label>
+        <input type="text" id="node-input-scope" style="width: 70%">
+        <input type="text" id="node-input-scopetype">
+    </div>  
+    <div class="form-row elastic">
+        <label for="node-input-protocolMapper"><i class="fa fa-globe"></i> <span>protocolMapper definition</span></label>
+        <input type="text" id="node-input-protocolMapper" style="width: 70%">
+        <input type="text" id="node-input-protocolMappertype">
+    </div>  
     
 </script>
 

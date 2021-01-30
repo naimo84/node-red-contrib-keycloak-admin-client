@@ -3,7 +3,7 @@
 
     RED
         .nodes
-        .registerType('keycloak-clients', {
+        .registerType('keycloak-components', {
             category: 'keycloak',
             defaults: {
                 name:{}   ,
@@ -12,10 +12,10 @@
                     type: "keycloak-config",
                     required: false
                 },
-                realmName: {},
-                client: {},
-                clienttype: {},
-                action:{}
+                realmName: {},   
+                action:{},
+                component:{},
+                componenttype:{}
             },
             inputs: 1,
             outputs: 1,
@@ -27,21 +27,25 @@
                     return this.confignode.name;
                 }
 
-                return "clients";
+                return "components";
             },
             icon: "font-awesome/fa-lock",
-            paletteLabel: "clients",
+            paletteLabel: "components",
             oneditprepare: function () {
                 var node = this;
-                $("#node-input-client").typedInput({
-                    types: ["msg", "json", "str"],
-                    typeField: "#node-input-clienttype"
+                $("#node-input-component").typedInput({
+                    types: ["msg", "json"],
+                    typeField: "#node-input-componenttype"
+                }); 
+                $("#node-input-protocolMapper").typedInput({
+                    types: ["msg", "json"],
+                    typeField: "#node-input-protocolMappertype"
                 });
             }
         });
 </script>
 
-<script type="text/x-red" data-template-name="keycloak-clients">
+<script type="text/x-red" data-template-name="keycloak-components">
     <style>
         .event {
             display:flex;
@@ -74,24 +78,24 @@
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
     </div>
-  
-    <div class="form-row elastic">
-        <label for="node-input-client"><i class="fa fa-globe"></i> <span>Client definition</span></label>
-        <input type="text" id="node-input-client" style="width: 70%">
-        <input type="text" id="node-input-clienttype">
-    </div>  
     <div class="form-row event">
         <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
         <select id="node-input-action">          
           <option value="get">get</option>
           <option value="create">create</option>
-          <option value="getSecret">getSecret</option>
+          <option value="addProtocolMapper">addProtocolMapper</option>
         </select>
     </div>
+    <div class="form-row elastic">
+        <label for="node-input-component"><i class="fa fa-globe"></i> <span>component definition</span></label>
+        <input type="text" id="node-input-component" style="width: 70%">
+        <input type="text" id="node-input-componenttype">
+    </div>  
 
+    
 </script>
 
 <!-- Simple Help Text -->
-<script type="text/x-red" data-help-name="keycloak-clients">
+<script type="text/x-red" data-help-name="keycloak-components">
 
 </script>

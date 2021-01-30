@@ -3,19 +3,19 @@
 
     RED
         .nodes
-        .registerType('keycloak-clients', {
+        .registerType('keycloak-identity-providers', {
             category: 'keycloak',
             defaults: {
-                name:{}   ,
                 confignode: {
                     value: "",
                     type: "keycloak-config",
                     required: false
                 },
-                realmName: {},
-                client: {},
-                clienttype: {},
-                action:{}
+                realmName: {}, 
+                name:{}  ,
+                provider: {},
+                providertype: {},
+                action:{}              
             },
             inputs: 1,
             outputs: 1,
@@ -27,21 +27,21 @@
                     return this.confignode.name;
                 }
 
-                return "clients";
+                return "identity providers";
             },
             icon: "font-awesome/fa-lock",
-            paletteLabel: "clients",
+            paletteLabel: "identity providers",
             oneditprepare: function () {
                 var node = this;
-                $("#node-input-client").typedInput({
+                $("#node-input-provider").typedInput({
                     types: ["msg", "json", "str"],
-                    typeField: "#node-input-clienttype"
+                    typeField: "#node-input-providertype"
                 });
             }
         });
 </script>
 
-<script type="text/x-red" data-template-name="keycloak-clients">
+<script type="text/x-red" data-template-name="keycloak-identity-providers">
     <style>
         .event {
             display:flex;
@@ -74,11 +74,10 @@
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
     </div>
-  
     <div class="form-row elastic">
-        <label for="node-input-client"><i class="fa fa-globe"></i> <span>Client definition</span></label>
-        <input type="text" id="node-input-client" style="width: 70%">
-        <input type="text" id="node-input-clienttype">
+        <label for="node-input-provider"><i class="fa fa-globe"></i> <span>identiy provider definition</span></label>
+        <input type="text" id="node-input-provider" style="width: 70%">
+        <input type="text" id="node-input-providertype">
     </div>  
     <div class="form-row event">
         <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
@@ -88,10 +87,10 @@
           <option value="getSecret">getSecret</option>
         </select>
     </div>
-
+    
 </script>
 
 <!-- Simple Help Text -->
-<script type="text/x-red" data-help-name="keycloak-clients">
+<script type="text/x-red" data-help-name="keycloak-identity-providers">
 
 </script>

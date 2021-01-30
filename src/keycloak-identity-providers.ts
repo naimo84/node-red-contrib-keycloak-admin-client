@@ -1,11 +1,10 @@
 
 import { NodeMessageInFlow, NodeMessage } from "node-red";
-
+import { KeycloakConfig, mergeDeep } from "./helper";
 import KcAdminClient from 'keycloak-admin';
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import { KeycloakConfig } from "./helper";
+import axios, { AxiosRequestConfig, Method } from 'axios';
 
-export interface ClientScopeMessage extends NodeMessageInFlow {
+export interface RealmMessage extends NodeMessageInFlow {
     payload: {
         execution_id: string;
         config: any;
@@ -13,9 +12,9 @@ export interface ClientScopeMessage extends NodeMessageInFlow {
 }
 
 module.exports = function (RED: any) {
+
+
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
-
-
         const cloudConfig = {
             baseUrl: config?.baseUrl,
             realmName: node?.realmName || 'master',
@@ -25,9 +24,7 @@ module.exports = function (RED: any) {
             clientId: config?.clientId || msg?.clientId || 'admin-cli',
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
-            client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client),
-            scope: node?.scopetype !== 'json' ? msg?.payload?.scope : JSON.parse(node?.scope),
-            protocolMapper: node?.protocolMappertype !== 'json' ? msg?.payload?.protocolMapper : JSON.parse(node?.protocolMapper)
+            provider: node?.providertype !== 'json' ? msg?.payload?.provider : JSON.parse(node?.provider)
         } as KeycloakConfig;
 
         return cloudConfig;
@@ -37,12 +34,9 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
-        node.scope = config.scope;
-        node.scopetype = config.scopetype;
-        node.protocolMapper = config.protocolMapper;
-        node.protocolMappertype = config.protocolMappertype;
         node.action = config.action;
-
+        node.provider = config.provider;
+        node.providertype = config.providertype;
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
@@ -57,7 +51,7 @@ module.exports = function (RED: any) {
         }
     }
 
-    async function processInput(node, msg: ClientScopeMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node, msg: RealmMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg)
@@ -66,36 +60,31 @@ module.exports = function (RED: any) {
         kcAdminClient.setConfig({
             realmName: kcConfig.realmName,
         });
-
-        if (!kcConfig.action || kcConfig.action === 'get') {
-            payload = await kcAdminClient.clientScopes.find();
-        } else if (kcConfig.action === 'create') {
-            try {
-                await kcAdminClient.clientScopes.create(kcConfig.scope)
-            } catch {
-
-            }
-            let scopes = await kcAdminClient.clientScopes.find();
-            for (let scope of scopes) {
-                if (scope.name === kcConfig.scope.name) {
-                    payload = scope;
-                    break;
+        try {
+            if (!kcConfig.action || kcConfig.action === 'get') {
+                payload = await kcAdminClient.identityProviders.find();
+            } else if (kcConfig.action === 'create') {
+                //@ts-ignore
+                if (msg.payload?.provider) {
+                    //@ts-ignore
+                    kcConfig.provider = mergeDeep(kcConfig.provider, msg.payload.provider)
                 }
+
+                payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
             }
-
-
-        } else if (kcConfig.action === 'addProtocolMapper') {
-            let id = kcConfig.scope.id;
-            await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
+        } catch (err) {
+            payload = {
+                created: false
+            }
         }
 
         send({
+            payload: payload,
             //@ts-ignore
-            realmName: kcConfig.realmName,
-            payload: payload
+            realmName: kcConfig.realmName
         })
         if (done) done();
     }
 
-    RED.nodes.registerType("keycloak-client-scopes", eventsNode);
+    RED.nodes.registerType("keycloak-identity-providers", eventsNode);
 }

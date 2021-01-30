@@ -2,10 +2,10 @@
 import { NodeMessageInFlow, NodeMessage } from "node-red";
 
 import KcAdminClient from 'keycloak-admin';
-import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
 import { KeycloakConfig } from "./helper";
+import { compile } from "handlebars";
 
-export interface ClientScopeMessage extends NodeMessageInFlow {
+export interface ClientcomponentMessage extends NodeMessageInFlow {
     payload: {
         execution_id: string;
         config: any;
@@ -26,8 +26,8 @@ module.exports = function (RED: any) {
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
             client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client),
-            scope: node?.scopetype !== 'json' ? msg?.payload?.scope : JSON.parse(node?.scope),
-            protocolMapper: node?.protocolMappertype !== 'json' ? msg?.payload?.protocolMapper : JSON.parse(node?.protocolMapper)
+            component: node?.componenttype !== 'json' ? msg?.payload?.component : JSON.parse(node?.component),
+            protocolMapper: node?.protocolMappertype !== 'json' ? msg?.payload?.protocolMapper : JSON.parse(node?.protocolMapper),
         } as KeycloakConfig;
 
         return cloudConfig;
@@ -37,8 +37,8 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
-        node.scope = config.scope;
-        node.scopetype = config.scopetype;
+        node.component = config.component;
+        node.componenttype = config.componenttype;
         node.protocolMapper = config.protocolMapper;
         node.protocolMappertype = config.protocolMappertype;
         node.action = config.action;
@@ -57,7 +57,7 @@ module.exports = function (RED: any) {
         }
     }
 
-    async function processInput(node, msg: ClientScopeMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node, msg: ClientcomponentMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg)
@@ -68,25 +68,34 @@ module.exports = function (RED: any) {
         });
 
         if (!kcConfig.action || kcConfig.action === 'get') {
-            payload = await kcAdminClient.clientScopes.find();
+            payload = await kcAdminClient.components.find();
         } else if (kcConfig.action === 'create') {
-            try {
-                await kcAdminClient.clientScopes.create(kcConfig.scope)
-            } catch {
+            let components = await kcAdminClient.components.find();
+            let exists = Object.keys(components).some((item, idx) => {
+                if (components[idx].name === kcConfig.component.name) {
+                    payload = components[idx];
+                    return true;
+                }
+            })
+            if (!exists) {
+                try {
+                    const template = compile(JSON.stringify(kcConfig.component));
+                    kcConfig.component = JSON.parse(template({ msg: msg }));
+                    let compId = await kcAdminClient.components.create(kcConfig.component)
+                } catch (err) {
+                    node.error(err);
 
-            }
-            let scopes = await kcAdminClient.clientScopes.find();
-            for (let scope of scopes) {
-                if (scope.name === kcConfig.scope.name) {
-                    payload = scope;
-                    break;
+                }
+                let components2 = await kcAdminClient.components.find();
+                for (let component of components2) {
+                    if (component.name === kcConfig.component.name) {
+                        payload = component;
+                        break;
+                    }
                 }
             }
 
 
-        } else if (kcConfig.action === 'addProtocolMapper') {
-            let id = kcConfig.scope.id;
-            await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
         }
 
         send({
@@ -97,5 +106,5 @@ module.exports = function (RED: any) {
         if (done) done();
     }
 
-    RED.nodes.registerType("keycloak-client-scopes", eventsNode);
+    RED.nodes.registerType("keycloak-components", eventsNode);
 }

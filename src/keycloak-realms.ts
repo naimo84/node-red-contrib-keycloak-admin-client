@@ -1,8 +1,9 @@
 
 import { NodeMessageInFlow, NodeMessage } from "node-red";
-import { getConfig } from "./helper";
+import { KeycloakConfig } from "./helper";
 import KcAdminClient from 'keycloak-admin';
 import axios, { AxiosRequestConfig, Method } from 'axios';
+import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
 
 export interface RealmMessage extends NodeMessageInFlow {
     payload: {
@@ -11,12 +12,41 @@ export interface RealmMessage extends NodeMessageInFlow {
     }
 }
 
+interface RealmPayload {
+    realm?: RealmRepresentation,
+    error?: any,
+    created?: boolean,
+    realms?: RealmRepresentation[]
+}
+
 module.exports = function (RED: any) {
+
+    function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
+
+
+        const cloudConfig = {
+            baseUrl: config?.baseUrl,
+            realmName: node?.realmName || 'master',
+            username: config?.credentials?.username,
+            password: config?.credentials?.password,
+            grantType: config?.grantType || 'password',
+            clientId: config?.clientId || msg?.clientId || 'admin-cli',
+            name: msg?.name || config?.name,
+            action: msg?.action || node?.action || 'get',
+            client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client),
+            realm: node?.realmtype !== 'json' ? msg?.payload?.realm : JSON.parse(node?.realm)
+        } as KeycloakConfig;
+
+        return cloudConfig;
+    }
 
     function eventsNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
+        node.action = config.action;
+        node.realm = config.realm;
+        node.realmtype = config.realmtype;
 
         try {
             node.msg = {};
@@ -36,49 +66,32 @@ module.exports = function (RED: any) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg)
-        let payload = {};
+        let payload: RealmPayload | any = {
+
+        };
 
         if (!kcConfig.action || kcConfig.action === 'get') {
-            payload = await kcAdminClient.realms.find();
+            payload.realms = await kcAdminClient.realms.find();
         }
         else if (kcConfig.action === 'create') {
-            let createKeycloakUrl = 'https://account.example.de/auth'
-            let clientSecret = '123'
-            let newRealm = await kcAdminClient.realms.create({
-                id: 'testnb',
-                displayName: 'TestNB',
-                enabled: true,
-                realm: 'testNb',
-                identityProviders: [
-                    {
-                        displayName: "example",
-                        enabled: true,
-                        alias: "example",
-                        trustEmail: true,
-                        storeToken: true,
-                        addReadTokenRoleOnCreate: true,
-                        providerId: "keycloak-oidc",
-                        config: {
-                            clientId: "example-identitybrokering",
-                            clientSecret: clientSecret,
-                            prompt: "login",
-                            authorizationUrl: createKeycloakUrl + "/realms/example/protocol/openid-connect/auth",
-                            tokenUrl: createKeycloakUrl + "/realms/example/protocol/openid-connect/token",
-                            logoutUrl: createKeycloakUrl + "/realms/example/protocol/openid-connect/logout",
-                            userInfoUrl: createKeycloakUrl + "/realms/example/protocol/openid-connect/userinfo",
-                            validateSignature: "true",
-                            uiLocales: "true",
-                            jwksUrl: createKeycloakUrl + "/realms/example/protocol/openid-connect/certs",
-                            issuer: createKeycloakUrl + "/realms/example",
-                            useJwksUrl: "true",
-                            loginHint: "true",
-                            clientAuthMethod: "client_secret_post",
-                            backchannelSupported: "true",
-                        }
-                    }
-                ]
-            })
-            payload = newRealm;
+            //@ts-ignore
+            if (msg.payload?.realm) {
+                //@ts-ignore
+                kcConfig.realm = Object.assign(kcConfig.realm, msg.payload.realm)
+            }
+            try {
+                let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
+                payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+
+            } catch (err) {
+                payload = {
+                    error: err,
+                    created: false,
+
+                }
+                payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+
+            }
         } else if (kcConfig.action === 'getExecutions') {
             kcAdminClient.setConfig({
                 realmName: kcConfig.realmName,
@@ -96,7 +109,9 @@ module.exports = function (RED: any) {
 
         }
         send({
-            payload: payload
+            payload: payload,
+            //@ts-ignore
+            realm: kcConfig.realmName
         })
         if (done) done();
     }

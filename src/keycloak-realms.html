@@ -11,7 +11,11 @@
                     type: "keycloak-config",
                     required: false
                 },
-                realmName: {},              
+                realmName: {},  
+                action:{}       ,
+                name:{} ,
+                realm:{},    
+                realmtype:{},    
             },
             inputs: 1,
             outputs: 1,
@@ -29,6 +33,10 @@
             paletteLabel: "realms",
             oneditprepare: function () {
                 var node = this;
+                $("#node-input-realm").typedInput({
+                    types: ["msg", "json"],
+                    typeField: "#node-input-realmtype"
+                });
             }
         });
 </script>
@@ -66,8 +74,20 @@
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
     </div>
-  
-
+    <div class="form-row event">
+        <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
+        <select id="node-input-action">          
+          <option value="get">get</option>
+          <option value="create">create</option>
+          <option value="getExecutions">getExecutions</option>
+          <option value="updateExecutionConfig">updateExecutionConfig</option>
+        </select>
+    </div>
+    <div class="form-row elastic">
+        <label for="node-input-realm"><i class="fa fa-globe"></i> <span>realm definition</span></label>
+        <input type="text" id="node-input-realm" style="width: 70%">
+        <input type="text" id="node-input-realmtype">
+    </div>  
     
 </script>
 

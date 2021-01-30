@@ -30,7 +30,9 @@
       "keycloak-config": "dist/keycloak-config.js",
       "keycloak-clients": "dist/keycloak-clients.js",
       "keycloak-realms": "dist/keycloak-realms.js",
-      "keycloak-client-scopes": "dist/keycloak-client-scopes.js"
+      "keycloak-identity-providers": "dist/keycloak-identity-providers.js",
+      "keycloak-client-scopes": "dist/keycloak-client-scopes.js",
+      "keycloak-components": "dist/keycloak-components.js"
     }
   },
   "repository": {
@@ -46,6 +48,7 @@
   },
   "dependencies": {
     "axios": "^0.21.1",
+    "handlebars": "^4.7.6",
     "keycloak-admin": "^1.14.6",
     "lodash": "^4.17.20"
   },
