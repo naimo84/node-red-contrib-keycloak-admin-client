@@ -29,13 +29,17 @@
 
                 return "components";
             },
-            icon: "font-awesome/fa-lock",
+            icon: "icon.svg",
             paletteLabel: "components",
             oneditprepare: function () {
                 var node = this;
                 $("#node-input-component").typedInput({
                     types: ["msg", "json"],
                     typeField: "#node-input-componenttype"
+                }); 
+                $("#node-input-realmName").typedInput({
+                    types: ["str","msg", "flow","global"],
+                    typeField: "#node-input-realmtype"
                 }); 
                 $("#node-input-protocolMapper").typedInput({
                     types: ["msg", "json"],
@@ -77,6 +81,8 @@
     <div class="form-row event">
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
+        <input type="text" id="node-input-realmtype">
+
     </div>
     <div class="form-row event">
         <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        

@@ -30,13 +30,14 @@ module.exports = function (RED: any) {
         return cloudConfig;
     }
 
-    function eventsNode(config: any) {
+    function identityProviderNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
         node.action = config.action;
         node.provider = config.provider;
         node.providertype = config.providertype;
+        node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
@@ -71,11 +72,15 @@ module.exports = function (RED: any) {
                 }
 
                 payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
+                node.status({text:`${kcConfig.provider.displayName} created`})
+
             }
         } catch (err) {
             payload = {
                 created: false
             }
+            node.status({text:`${kcConfig.provider.displayName} already exists`})
+
         }
 
         send({
@@ -83,8 +88,9 @@ module.exports = function (RED: any) {
             //@ts-ignore
             realmName: kcConfig.realmName
         })
+        setTimeout(()=> node.status({ text: `` }),10000)
         if (done) done();
     }
 
-    RED.nodes.registerType("keycloak-identity-providers", eventsNode);
+    RED.nodes.registerType("keycloak-identity-providers", identityProviderNode);
 }

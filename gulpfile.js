@@ -1,10 +1,9 @@
 var gulp = require("gulp");
 var ts = require("gulp-typescript");
-var tsProject = ts.createProject("tsconfig.json");
 var sourcemaps = require('gulp-sourcemaps');
 var nodemon = require('gulp-nodemon');
 var watch = require('gulp-watch');
-
+var merge = require('merge-stream');
 var paths = {
     pages: ['src/*.html'],
     src: 'src',
@@ -12,6 +11,9 @@ var paths = {
 };
 
 function copyHtml() {
+    gulp.src('src/*.svg', { base: paths.src })
+        .pipe(gulp.dest(paths.dist+'/icons'))
+
     return gulp.src(paths.pages, { base: paths.src })
         .pipe(gulp.dest(paths.dist));
 }
@@ -30,6 +32,7 @@ gulp.task('develop', function (done) {
         delay: 2000,
         env: { "NO_UPDATE_NOTIFIER": "1" }
     });
+    var tsProject = ts.createProject("tsconfig.json");
 
     copyHtml();
     tsProject.src()
@@ -45,14 +48,15 @@ gulp.task('develop', function (done) {
     });
 
     watch('src/*.ts').on('change', () => {
-        tsProject.src()
+        var tsProject = ts.createProject("tsconfig.json")
+
+        var tsResult = gulp.src(['src/**/*.ts'])
             .pipe(sourcemaps.init())
-            .pipe(tsProject())
-            .js
+            .pipe(tsProject());
+        stream.emit('restart', 10)
+        return merge(tsResult, tsResult.js)
             .pipe(sourcemaps.write('.'))
             .pipe(gulp.dest(paths.dist));
-
-        stream.emit('restart', 10)
     });
 
     stream
@@ -68,6 +72,8 @@ gulp.task('develop', function (done) {
 gulp.task("default", gulp.series(
     gulp.parallel('copy-html'),
     () => {
+        var tsProject = ts.createProject("tsconfig.json");
+
         return tsProject.src()
             .pipe(sourcemaps.init())
             .pipe(tsProject())

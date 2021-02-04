@@ -37,17 +37,34 @@ module.exports = function (RED: any) {
             realm: node?.realmtype !== 'json' ? msg?.payload?.realm : JSON.parse(node?.realm)
         } as KeycloakConfig;
 
+        switch (node?.realmNametype) {
+            case 'msg':
+                cloudConfig.realmName = msg[node.realmName]
+                break;
+            case 'str':
+                cloudConfig.realmName = JSON.parse(node?.realmName)
+                break;
+            case 'flow':
+                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                break;
+            case 'global':
+                cloudConfig.realmName = node.context().global.get(node.realmName)
+                break;
+        }
+
         return cloudConfig;
     }
 
-    function eventsNode(config: any) {
+    function realmNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
+        node.realmNametype = config.realmNametype;
+
         node.action = config.action;
         node.realm = config.realm;
         node.realmtype = config.realmtype;
-
+        node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
@@ -79,10 +96,11 @@ module.exports = function (RED: any) {
                 //@ts-ignore
                 kcConfig.realm = Object.assign(kcConfig.realm, msg.payload.realm)
             }
+
             try {
                 let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
                 payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-
+                node.status({text:`${kcConfig.realmName ? kcConfig.realmName: kcConfig.realm.realm} created`})
             } catch (err) {
                 payload = {
                     error: err,
@@ -90,6 +108,7 @@ module.exports = function (RED: any) {
 
                 }
                 payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+                node.status({text:`${kcConfig.realmName ? kcConfig.realmName: kcConfig.realm.realm} already exists`})
 
             }
         } else if (kcConfig.action === 'getExecutions') {
@@ -106,15 +125,17 @@ module.exports = function (RED: any) {
                 method: 'POST',
                 data: msg.payload.config
             })
-
         }
+
         send({
             payload: payload,
             //@ts-ignore
             realm: kcConfig.realmName
         })
+
+        setTimeout(()=> node.status({ text: `` }),10000)
         if (done) done();
     }
 
-    RED.nodes.registerType("keycloak-realms", eventsNode);
+    RED.nodes.registerType("keycloak-realms", realmNode);
 }

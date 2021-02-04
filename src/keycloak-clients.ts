@@ -1,7 +1,8 @@
 
-import { NodeMessageInFlow, NodeMessage } from "node-red";
+import { NodeMessageInFlow, NodeMessage,Node } from "node-red";
 import { ClientMessage, KeycloakConfig } from "./helper";
 import KcAdminClient from 'keycloak-admin';
+import { compile } from "handlebars";
 
 module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
@@ -20,13 +21,14 @@ module.exports = function (RED: any) {
         return cloudConfig;
     }
 
-    function eventsNode(config: any) {
+    function clientsNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
         node.action = config.action;
         node.client = config.client;
         node.clienttype = config.clienttype;
+        node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
@@ -41,7 +43,7 @@ module.exports = function (RED: any) {
         }
     }
 
-    async function processInput(node, msg: ClientMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node:Node, msg: ClientMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg)
@@ -59,11 +61,16 @@ module.exports = function (RED: any) {
                 if (msg?.payload?.client) {
                     client = Object.assign(client, msg.payload.client)
                 }
+                const template = compile(JSON.stringify(client));
+                client = JSON.parse(template({ msg: msg }));
                 try {
                     payload = await kcAdminClient.clients.create(client)
+                    node.status({ shape:'dot',fill:'green',text: `${client.clientId} created` })
                 } catch {
                     let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
                     payload = payloadClients ? payloadClients[0] : {}
+                    //@ts-ignore
+                    node.status({shape:'dot',fill:'yellow', text: `${payload.clientId} already exists` })
                 }
             } else if (kcConfig.action === 'getSecret') {
                 let client = Object.assign(msg.payload, { realm: kcConfig.realmName }) as any;
@@ -72,15 +79,19 @@ module.exports = function (RED: any) {
             }
 
         } catch (err) {
+            console.log(err);
+
             payload = await kcAdminClient.clients.find();
         }
+
         send({
             payload: payload,
             //@ts-ignore
             realmName: kcConfig.realmName
         })
+        setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
     }
 
-    RED.nodes.registerType("keycloak-clients", eventsNode);
+    RED.nodes.registerType("keycloak-clients", clientsNode);
 }

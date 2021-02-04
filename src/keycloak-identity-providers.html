@@ -29,11 +29,15 @@
 
                 return "identity providers";
             },
-            icon: "font-awesome/fa-lock",
+            icon: "icon.svg",
             paletteLabel: "identity providers",
             oneditprepare: function () {
                 var node = this;
-                $("#node-input-provider").typedInput({
+                $("#node-input-realmName").typedInput({
+                    types: ["str","msg", "flow","global"],
+                    typeField: "#node-input-realmtype"
+                }); 
+                 $("#node-input-provider").typedInput({
                     types: ["msg", "json", "str"],
                     typeField: "#node-input-providertype"
                 });
@@ -73,6 +77,8 @@
     <div class="form-row event">
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
+        <input type="text" id="node-input-realmtype">
+
     </div>
     <div class="form-row elastic">
         <label for="node-input-provider"><i class="fa fa-globe"></i> <span>identiy provider definition</span></label>

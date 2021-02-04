@@ -1,5 +1,5 @@
 
-import { NodeMessageInFlow, NodeMessage } from "node-red";
+import { NodeMessageInFlow, NodeMessage,EditorRED } from "node-red";
 
 import KcAdminClient from 'keycloak-admin';
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
@@ -26,14 +26,39 @@ module.exports = function (RED: any) {
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
             client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client),
-            scope: node?.scopetype !== 'json' ? msg?.payload?.scope : JSON.parse(node?.scope),
-            protocolMapper: node?.protocolMappertype !== 'json' ? msg?.payload?.protocolMapper : JSON.parse(node?.protocolMapper)
         } as KeycloakConfig;
+
+        switch (node?.realNametype) {
+            case 'msg':
+                cloudConfig.realmName = msg[node.realName]
+                break;
+            case 'str':
+                cloudConfig.realmName = JSON.parse(node?.realmName)
+                break;
+            case 'flow':
+                cloudConfig.realmName = node.context().flow.get(node.realName)
+                break;
+            case 'global':
+                cloudConfig.realmName = node.context().global.get(node.realName)
+                break;
+        }
+
+        if (node?.protocolMappertype !== 'json') {
+            cloudConfig.protocolMapper = msg[node.protocolMapper]
+        } else {
+            cloudConfig.protocolMapper = JSON.parse(node?.protocolMapper)
+        }
+
+        if (node?.scopetype !== 'json') {
+            cloudConfig.scope = msg[node.scope]
+        } else {
+            cloudConfig.scope = JSON.parse(node?.scope)
+        }
 
         return cloudConfig;
     }
 
-    function eventsNode(config: any) {
+    function clientScopeNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
@@ -42,7 +67,7 @@ module.exports = function (RED: any) {
         node.protocolMapper = config.protocolMapper;
         node.protocolMappertype = config.protocolMappertype;
         node.action = config.action;
-
+        node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
@@ -72,7 +97,10 @@ module.exports = function (RED: any) {
         } else if (kcConfig.action === 'create') {
             try {
                 await kcAdminClient.clientScopes.create(kcConfig.scope)
+                node.status({ text: `${kcConfig.scope.name} created` })
+
             } catch {
+                node.status({ text: `${kcConfig.scope.name} already exists` })
 
             }
             let scopes = await kcAdminClient.clientScopes.find();
@@ -86,7 +114,18 @@ module.exports = function (RED: any) {
 
         } else if (kcConfig.action === 'addProtocolMapper') {
             let id = kcConfig.scope.id;
-            await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
+            //@ts-ignore
+            if (msg.protocolmapper) {
+                //@ts-ignore
+                kcConfig.protocolMapper = Object.assign(kcConfig.protocolMapper, msg.protocolmapper)
+            }
+            let protocolMapper = await kcAdminClient.clientScopes.findProtocolMapperByName({ id, name: kcConfig.protocolMapper.name });
+            if (!protocolMapper) {
+                await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
+                node.status({ text: `${kcConfig.protocolMapper.name} created` })
+            } else {
+                node.status({ text: `${kcConfig.protocolMapper.name} already exists` })
+            }
         }
 
         send({
@@ -94,8 +133,10 @@ module.exports = function (RED: any) {
             realmName: kcConfig.realmName,
             payload: payload
         })
+
+        setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
     }
 
-    RED.nodes.registerType("keycloak-client-scopes", eventsNode);
+    RED.nodes.registerType("keycloak-client-scopes", clientScopeNode);
 }

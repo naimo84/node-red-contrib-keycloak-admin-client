@@ -31,13 +31,17 @@
 
                 return "client scopes";
             },
-            icon: "font-awesome/fa-lock",
+            icon: "icon.svg",
             paletteLabel: "client scopes",
             oneditprepare: function () {
                 var node = this;
                 $("#node-input-scope").typedInput({
                     types: ["msg", "json"],
                     typeField: "#node-input-scopetype"
+                }); 
+                $("#node-input-realmName").typedInput({
+                    types: ["str","msg", "flow","global"],
+                    typeField: "#node-input-realmtype"
                 }); 
                 $("#node-input-protocolMapper").typedInput({
                     types: ["msg", "json"],

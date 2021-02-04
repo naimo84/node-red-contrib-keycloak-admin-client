@@ -33,7 +33,7 @@ module.exports = function (RED: any) {
         return cloudConfig;
     }
 
-    function eventsNode(config: any) {
+    function componentsNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
@@ -42,7 +42,7 @@ module.exports = function (RED: any) {
         node.protocolMapper = config.protocolMapper;
         node.protocolMappertype = config.protocolMappertype;
         node.action = config.action;
-
+        node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
@@ -62,7 +62,7 @@ module.exports = function (RED: any) {
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg)
         let payload = {};
-
+        let payloaderror;
         kcAdminClient.setConfig({
             realmName: kcConfig.realmName,
         });
@@ -70,31 +70,40 @@ module.exports = function (RED: any) {
         if (!kcConfig.action || kcConfig.action === 'get') {
             payload = await kcAdminClient.components.find();
         } else if (kcConfig.action === 'create') {
-            let components = await kcAdminClient.components.find();
-            let exists = Object.keys(components).some((item, idx) => {
-                if (components[idx].name === kcConfig.component.name) {
-                    payload = components[idx];
-                    return true;
-                }
-            })
-            if (!exists) {
-                try {
-                    const template = compile(JSON.stringify(kcConfig.component));
-                    kcConfig.component = JSON.parse(template({ msg: msg }));
-                    let compId = await kcAdminClient.components.create(kcConfig.component)
-                } catch (err) {
-                    node.error(err);
-
-                }
-                let components2 = await kcAdminClient.components.find();
-                for (let component of components2) {
-                    if (component.name === kcConfig.component.name) {
-                        payload = component;
-                        break;
+            try {
+                let components = await kcAdminClient.components.find();
+                let exists = Object.keys(components).some((item, idx) => {
+                    if (components[idx].name === kcConfig.component.name) {
+                        payload = components[idx];
+                        return true;
                     }
-                }
-            }
+                })
+                if (!exists) {
+                    try {
+                        const template = compile(JSON.stringify(kcConfig.component));
+                        kcConfig.component = JSON.parse(template({ msg: msg }));
+                        let compId = await kcAdminClient.components.create(kcConfig.component)
+                        node.status({ text: `${kcConfig.component.name} created` })
 
+                    } catch (err) {
+                        payloaderror = err;
+                        node.status({ text: `${kcConfig.component.name} already exists` })
+
+                    }
+                    let components2 = await kcAdminClient.components.find();
+                    for (let component of components2) {
+                        if (component.name === kcConfig.component.name) {
+                            payload = component;
+                            break;
+                        }
+                    }
+                }else{
+                    node.status({ text: `${kcConfig.component.name} already exists` })
+                }
+            } catch (err) {
+                payloaderror = err;
+                node.status({ text: `${kcConfig.component.name} already exists` })
+            }
 
         }
 
@@ -103,8 +112,11 @@ module.exports = function (RED: any) {
             realmName: kcConfig.realmName,
             payload: payload
         })
-        if (done) done();
+
+        setTimeout(()=> node.status({ text: `` }),10000)
+        if (done && !payloaderror) done();
+        else done(payloaderror);
     }
 
-    RED.nodes.registerType("keycloak-components", eventsNode);
+    RED.nodes.registerType("keycloak-components", componentsNode);
 }
