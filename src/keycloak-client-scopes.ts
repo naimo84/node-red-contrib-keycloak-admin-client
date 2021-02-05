@@ -1,5 +1,5 @@
 
-import { NodeMessageInFlow, NodeMessage,EditorRED } from "node-red";
+import { NodeMessageInFlow, NodeMessage, EditorRED } from "node-red";
 
 import KcAdminClient from 'keycloak-admin';
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
@@ -63,7 +63,7 @@ module.exports = function (RED: any) {
         let node = this;
         node.realmName = config.realmName;
         node.realmNametype = config.realmNametype;
-        
+
         node.scope = config.scope;
         node.scopetype = config.scopetype;
         node.protocolMapper = config.protocolMapper;
@@ -99,11 +99,10 @@ module.exports = function (RED: any) {
         } else if (kcConfig.action === 'create') {
             try {
                 await kcAdminClient.clientScopes.create(kcConfig.scope)
-                node.status({ text: `${kcConfig.scope.name} created` })
+                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.scope.name} created` })
 
             } catch {
-                node.status({ text: `${kcConfig.scope.name} already exists` })
-
+                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.scope.name} already exists` })
             }
             let scopes = await kcAdminClient.clientScopes.find();
             for (let scope of scopes) {
@@ -112,8 +111,6 @@ module.exports = function (RED: any) {
                     break;
                 }
             }
-
-
         } else if (kcConfig.action === 'addProtocolMapper') {
             let id = kcConfig.scope.id;
             //@ts-ignore
@@ -124,9 +121,9 @@ module.exports = function (RED: any) {
             let protocolMapper = await kcAdminClient.clientScopes.findProtocolMapperByName({ id, name: kcConfig.protocolMapper.name });
             if (!protocolMapper) {
                 await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
-                node.status({ text: `${kcConfig.protocolMapper.name} created` })
+                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.protocolMapper.name} added` })
             } else {
-                node.status({ text: `${kcConfig.protocolMapper.name} already exists` })
+                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.protocolMapper.name} already exists` })
             }
         }
 

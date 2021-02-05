@@ -98,18 +98,18 @@ module.exports = function (RED: any) {
             }
 
             try {
-                let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
-                payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                node.status({ text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
-            } catch (err) {
-                payload = {
-                    error: err,
-                    created: false,
-
+                let oldRealm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+                if (!oldRealm) {
+                    let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
+                    payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+                    node.status({ text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
+                } else {
+                    payload.realm = oldRealm;
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
                 }
+            } catch (err) {               
                 payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                node.status({ text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
-
+                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
             }
         } else if (kcConfig.action === 'getExecutions') {
             kcAdminClient.setConfig({
@@ -125,6 +125,8 @@ module.exports = function (RED: any) {
                 method: 'POST',
                 data: msg.payload.config
             })
+            node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
+
         }
 
         send({
@@ -132,9 +134,9 @@ module.exports = function (RED: any) {
             //@ts-ignore
             realm: kcConfig.realmName
         })
+        if (done) done();
 
         setTimeout(() => node.status({ text: `` }), 10000)
-        if (done) done();
     }
 
     RED.nodes.registerType("keycloak-realms", realmNode);

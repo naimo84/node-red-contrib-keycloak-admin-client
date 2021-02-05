@@ -72,14 +72,14 @@ module.exports = function (RED: any) {
                 }
 
                 payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
-                node.status({text:`${kcConfig.provider.displayName} created`})
+                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.provider.displayName} created` })
 
             }
         } catch (err) {
             payload = {
                 created: false
             }
-            node.status({text:`${kcConfig.provider.displayName} already exists`})
+            node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
 
         }
 
@@ -88,7 +88,7 @@ module.exports = function (RED: any) {
             //@ts-ignore
             realmName: kcConfig.realmName
         })
-        setTimeout(()=> node.status({ text: `` }),10000)
+        setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
     }
 

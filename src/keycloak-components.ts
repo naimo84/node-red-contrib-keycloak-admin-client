@@ -83,11 +83,11 @@ module.exports = function (RED: any) {
                         const template = compile(JSON.stringify(kcConfig.component));
                         kcConfig.component = JSON.parse(template({ msg: msg }));
                         let compId = await kcAdminClient.components.create(kcConfig.component)
-                        node.status({ text: `${kcConfig.component.name} created` })
+                        node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.component.name} created` })
 
                     } catch (err) {
                         payloaderror = err;
-                        node.status({ text: `${kcConfig.component.name} already exists` })
+                        node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.component.name} already exists` })
 
                     }
                     let components2 = await kcAdminClient.components.find();
@@ -97,12 +97,12 @@ module.exports = function (RED: any) {
                             break;
                         }
                     }
-                }else{
-                    node.status({ text: `${kcConfig.component.name} already exists` })
+                } else {
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.component.name} already exists` })
                 }
             } catch (err) {
                 payloaderror = err;
-                node.status({ text: `${kcConfig.component.name} already exists` })
+                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.component.name} already exists` })
             }
 
         }
@@ -113,7 +113,7 @@ module.exports = function (RED: any) {
             payload: payload
         })
 
-        setTimeout(()=> node.status({ text: `` }),10000)
+        setTimeout(() => node.status({ text: `` }), 10000)
         if (done && !payloaderror) done();
         else done(payloaderror);
     }
