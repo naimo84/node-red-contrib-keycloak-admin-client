@@ -28,18 +28,18 @@ module.exports = function (RED: any) {
             client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client),
         } as KeycloakConfig;
 
-        switch (node?.realNametype) {
+        switch (node?.realmNametype) {
             case 'msg':
-                cloudConfig.realmName = msg[node.realName]
+                cloudConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
                 cloudConfig.realmName = JSON.parse(node?.realmName)
                 break;
             case 'flow':
-                cloudConfig.realmName = node.context().flow.get(node.realName)
+                cloudConfig.realmName = node.context().flow.get(node.realmName)
                 break;
             case 'global':
-                cloudConfig.realmName = node.context().global.get(node.realName)
+                cloudConfig.realmName = node.context().global.get(node.realmName)
                 break;
         }
 
@@ -62,6 +62,8 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
+        node.realmNametype = config.realmNametype;
+        
         node.scope = config.scope;
         node.scopetype = config.scopetype;
         node.protocolMapper = config.protocolMapper;

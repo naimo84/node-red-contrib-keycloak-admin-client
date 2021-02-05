@@ -92,15 +92,15 @@ module.exports = function (RED: any) {
         }
         else if (kcConfig.action === 'create') {
             //@ts-ignore
-            if (msg.payload?.realm) {
+            if (kcConfig.realmName) {
                 //@ts-ignore
-                kcConfig.realm = Object.assign(kcConfig.realm, msg.payload.realm)
+                kcConfig.realm.realm = kcConfig.realmName;
             }
 
             try {
                 let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
                 payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                node.status({text:`${kcConfig.realmName ? kcConfig.realmName: kcConfig.realm.realm} created`})
+                node.status({ text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
             } catch (err) {
                 payload = {
                     error: err,
@@ -108,7 +108,7 @@ module.exports = function (RED: any) {
 
                 }
                 payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                node.status({text:`${kcConfig.realmName ? kcConfig.realmName: kcConfig.realm.realm} already exists`})
+                node.status({ text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
 
             }
         } else if (kcConfig.action === 'getExecutions') {
@@ -133,7 +133,7 @@ module.exports = function (RED: any) {
             realm: kcConfig.realmName
         })
 
-        setTimeout(()=> node.status({ text: `` }),10000)
+        setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
     }
 
