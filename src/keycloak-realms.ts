@@ -42,7 +42,7 @@ module.exports = function (RED: any) {
                 cloudConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
-                cloudConfig.realmName = JSON.parse(node?.realmName)
+                cloudConfig.realmName = node?.realmName
                 break;
             case 'flow':
                 cloudConfig.realmName = node.context().flow.get(node.realmName)
@@ -67,8 +67,7 @@ module.exports = function (RED: any) {
         node.status({ text: `` })
         try {
             node.msg = {};
-            node.on('input', (msg, send, done) => {
-                node.msg = RED.util.cloneMessage(msg);
+            node.on('input', (msg, send, done) => {                
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -128,12 +127,13 @@ module.exports = function (RED: any) {
             node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
 
         }
-
-        send({
-            payload: payload,
-            //@ts-ignore
+        
+        let newMsg = Object.assign(RED.util.cloneMessage(msg),{
+            payload: payload,          
             realm: kcConfig.realmName
-        })
+        });
+        
+        send(newMsg)
         if (done) done();
 
         setTimeout(() => node.status({ text: `` }), 10000)

@@ -48,7 +48,7 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.msg = RED.util.cloneMessage(msg);
+                
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -101,11 +101,12 @@ module.exports = function (RED: any) {
             payload = await kcAdminClient.clients.find();
         }
 
-        send({
-            payload: payload,
-            //@ts-ignore
-            realmName: kcConfig.realmName
-        })
+        let newMsg = Object.assign(RED.util.cloneMessage(msg),{
+            payload: payload,          
+            realm: kcConfig.realmName
+        });
+        
+        send(newMsg)
         setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
     }

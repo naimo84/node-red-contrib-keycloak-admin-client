@@ -73,7 +73,7 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.msg = RED.util.cloneMessage(msg);
+
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -93,48 +93,53 @@ module.exports = function (RED: any) {
         kcAdminClient.setConfig({
             realmName: kcConfig.realmName,
         });
+        try {
+            if (!kcConfig.action || kcConfig.action === 'get') {
+                payload = await kcAdminClient.clientScopes.find();
+            } else if (kcConfig.action === 'create') {
+                try {
+                    await kcAdminClient.clientScopes.create(kcConfig.scope)
+                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.scope.name} created` })
 
-        if (!kcConfig.action || kcConfig.action === 'get') {
-            payload = await kcAdminClient.clientScopes.find();
-        } else if (kcConfig.action === 'create') {
-            try {
-                await kcAdminClient.clientScopes.create(kcConfig.scope)
-                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.scope.name} created` })
-
-            } catch {
-                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.scope.name} already exists` })
-            }
-            let scopes = await kcAdminClient.clientScopes.find();
-            for (let scope of scopes) {
-                if (scope.name === kcConfig.scope.name) {
-                    payload = scope;
-                    break;
+                } catch {
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.scope.name} already exists` })
+                }
+                let scopes = await kcAdminClient.clientScopes.find();
+                for (let scope of scopes) {
+                    if (scope.name === kcConfig.scope.name) {
+                        payload = scope;
+                        break;
+                    }
+                }
+            } else if (kcConfig.action === 'addProtocolMapper') {
+                let id = kcConfig.scope.id;
+                //@ts-ignore
+                if (msg.protocolmapper) {
+                    //@ts-ignore
+                    kcConfig.protocolMapper = Object.assign(kcConfig.protocolMapper, msg.protocolmapper)
+                }
+                let protocolMapper = await kcAdminClient.clientScopes.findProtocolMapperByName({ id, name: kcConfig.protocolMapper.name });
+                if (!protocolMapper) {
+                    await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
+                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.protocolMapper.name} added` })
+                } else {
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.protocolMapper.name} already exists` })
                 }
             }
-        } else if (kcConfig.action === 'addProtocolMapper') {
-            let id = kcConfig.scope.id;
-            //@ts-ignore
-            if (msg.protocolmapper) {
-                //@ts-ignore
-                kcConfig.protocolMapper = Object.assign(kcConfig.protocolMapper, msg.protocolmapper)
-            }
-            let protocolMapper = await kcAdminClient.clientScopes.findProtocolMapperByName({ id, name: kcConfig.protocolMapper.name });
-            if (!protocolMapper) {
-                await kcAdminClient.clientScopes.addProtocolMapper({ id }, kcConfig.protocolMapper);
-                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.protocolMapper.name} added` })
-            } else {
-                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.protocolMapper.name} already exists` })
-            }
+
+            let newMsg = Object.assign(RED.util.cloneMessage(msg), {
+                payload: payload,
+                realm: kcConfig.realmName
+            });
+
+            send(newMsg)
+            if (done) done();
+        } catch (err) {
+            if (done) done(err);
+
         }
 
-        send({
-            //@ts-ignore
-            realmName: kcConfig.realmName,
-            payload: payload
-        })
-
         setTimeout(() => node.status({ text: `` }), 10000)
-        if (done) done();
     }
 
     RED.nodes.registerType("keycloak-client-scopes", clientScopeNode);

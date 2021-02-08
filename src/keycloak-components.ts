@@ -29,6 +29,20 @@ module.exports = function (RED: any) {
             component: node?.componenttype !== 'json' ? msg?.payload?.component : JSON.parse(node?.component),
             protocolMapper: node?.protocolMappertype !== 'json' ? msg?.payload?.protocolMapper : JSON.parse(node?.protocolMapper),
         } as KeycloakConfig;
+        switch (node?.realmNametype) {
+            case 'msg':
+                cloudConfig.realmName = msg[node.realmName]
+                break;
+            case 'str':
+                cloudConfig.realmName = node?.realmName
+                break;
+            case 'flow':
+                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                break;
+            case 'global':
+                cloudConfig.realmName = node.context().global.get(node.realmName)
+                break;
+        }
 
         return cloudConfig;
     }
@@ -46,7 +60,7 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.msg = RED.util.cloneMessage(msg);
+                
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -107,11 +121,12 @@ module.exports = function (RED: any) {
 
         }
 
-        send({
-            //@ts-ignore
-            realmName: kcConfig.realmName,
-            payload: payload
-        })
+        let newMsg = Object.assign(RED.util.cloneMessage(msg),{
+            payload: payload,          
+            realm: kcConfig.realmName
+        });
+        
+        send(newMsg)
 
         setTimeout(() => node.status({ text: `` }), 10000)
         if (done && !payloaderror) done();

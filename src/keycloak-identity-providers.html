@@ -12,6 +12,7 @@
                     required: false
                 },
                 realmName: {}, 
+                realmNametype: {},  
                 name:{}  ,
                 provider: {},
                 providertype: {},
@@ -35,7 +36,7 @@
                 var node = this;
                 $("#node-input-realmName").typedInput({
                     types: ["str","msg", "flow","global"],
-                    typeField: "#node-input-realmtype"
+                    typeField: "#node-input-realmNametype"
                 }); 
                  $("#node-input-provider").typedInput({
                     types: ["msg", "json", "str"],
@@ -77,7 +78,7 @@
     <div class="form-row event">
         <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
         <input type="text" id="node-input-realmName">
-        <input type="text" id="node-input-realmtype">
+        <input type="text" id="node-input-realmNametype">
 
     </div>
     <div class="form-row elastic">
@@ -90,7 +91,8 @@
         <select id="node-input-action">          
           <option value="get">get</option>
           <option value="create">create</option>
-          <option value="getSecret">getSecret</option>
+          <option value="getMappers">get mappers</option>
+          <option value="addMapper">add mapper</option>
         </select>
     </div>
     

@@ -26,6 +26,20 @@ module.exports = function (RED: any) {
             action: msg?.action || node?.action || 'get',
             provider: node?.providertype !== 'json' ? msg?.payload?.provider : JSON.parse(node?.provider)
         } as KeycloakConfig;
+        switch (node?.realmNametype) {
+            case 'msg':
+                cloudConfig.realmName = msg[node.realmName]
+                break;
+            case 'str':
+                cloudConfig.realmName = node?.realmName
+                break;
+            case 'flow':
+                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                break;
+            case 'global':
+                cloudConfig.realmName = node.context().global.get(node.realmName)
+                break;
+        }
 
         return cloudConfig;
     }
@@ -34,6 +48,7 @@ module.exports = function (RED: any) {
         RED.nodes.createNode(this, config);
         let node = this;
         node.realmName = config.realmName;
+        node.realmNametype = config.realmNametype;
         node.action = config.action;
         node.provider = config.provider;
         node.providertype = config.providertype;
@@ -41,7 +56,7 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.msg = RED.util.cloneMessage(msg);
+
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -74,20 +89,41 @@ module.exports = function (RED: any) {
                 payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
                 node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.provider.displayName} created` })
 
+            } else if (kcConfig.action === 'getMappers') {
+                payload = await kcAdminClient.identityProviders.findMappers({ alias: 'myodav' });
+            } else if (kcConfig.action === 'addMapper') {
+                await kcAdminClient.identityProviders.createMapper({
+                    alias: "myodav",
+                    identityProviderMapper: {
+                        config: {                            
+                            claims: `[{"key":"organisation","value":"^ 24$|^ 100$"}]`,
+                            role: "CRM",
+                            syncMode: "FORCE",
+                            "are.claim.values.regex": "true"
+                        },
+                        identityProviderAlias: "myodav",
+                        identityProviderMapper: "oidc-advanced-role-idp-mapper",
+                        name: "CRMRoleMapper",
+
+                    }
+                })
             }
         } catch (err) {
             payload = {
                 created: false
             }
             node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
+            console.log(err);
 
         }
 
-        send({
+        let newMsg = Object.assign(RED.util.cloneMessage(msg), {
             payload: payload,
-            //@ts-ignore
-            realmName: kcConfig.realmName
-        })
+            realm: kcConfig.realmName
+        });
+
+        send(newMsg)
+
         setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
     }
