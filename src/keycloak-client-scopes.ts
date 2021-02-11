@@ -33,7 +33,7 @@ module.exports = function (RED: any) {
                 cloudConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
-                cloudConfig.realmName = JSON.parse(node?.realmName)
+                cloudConfig.realmName =node?.realmName
                 break;
             case 'flow':
                 cloudConfig.realmName = node.context().flow.get(node.realmName)

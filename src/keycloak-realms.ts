@@ -67,7 +67,7 @@ module.exports = function (RED: any) {
         node.status({ text: `` })
         try {
             node.msg = {};
-            node.on('input', (msg, send, done) => {                
+            node.on('input', (msg, send, done) => {
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -101,12 +101,12 @@ module.exports = function (RED: any) {
                 if (!oldRealm) {
                     let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
                     payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                    node.status({ text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
+                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
                 } else {
                     payload.realm = oldRealm;
                     node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
                 }
-            } catch (err) {               
+            } catch (err) {
                 payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
                 node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
             }
@@ -127,12 +127,12 @@ module.exports = function (RED: any) {
             node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
 
         }
-        
-        let newMsg = Object.assign(RED.util.cloneMessage(msg),{
-            payload: payload,          
+
+        let newMsg = Object.assign(RED.util.cloneMessage(msg), {
+            payload: payload,
             realm: kcConfig.realmName
         });
-        
+
         send(newMsg)
         if (done) done();
 

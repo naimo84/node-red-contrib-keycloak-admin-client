@@ -48,7 +48,7 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                
+
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -80,10 +80,10 @@ module.exports = function (RED: any) {
                 const template = compile(JSON.stringify(client));
                 client = JSON.parse(template({ msg: msg }));
                 try {
-                    payload = await kcAdminClient.clients.create(client)
+                    payload = Object.assign(client, await kcAdminClient.clients.create(client));
                     node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} created` })
-                } catch(err) {
-                                       
+                } catch (err) {
+
                     let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
                     payload = payloadClients ? payloadClients[0] : {}
                     //@ts-ignore
@@ -101,11 +101,11 @@ module.exports = function (RED: any) {
             payload = await kcAdminClient.clients.find();
         }
 
-        let newMsg = Object.assign(RED.util.cloneMessage(msg),{
-            payload: payload,          
+        let newMsg = Object.assign(RED.util.cloneMessage(msg), {
+            payload: payload,
             realm: kcConfig.realmName
         });
-        
+
         send(newMsg)
         setTimeout(() => node.status({ text: `` }), 10000)
         if (done) done();
