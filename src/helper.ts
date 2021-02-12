@@ -8,14 +8,10 @@ import RealmRepresentation from 'keycloak-admin/lib/defs/realmRepresentation';
 import ClientScopeRepresentation from 'keycloak-admin/lib/defs/clientScopeRepresentation';
 import ComponentRepresentation from 'keycloak-admin/lib/defs/componentRepresentation';
 
-
 export interface IcalNode extends Node {
-
     config: any;
     red: any;
-
 }
-
 
 export function isObject(item) {
     return (item && typeof item === 'object' && !Array.isArray(item));
@@ -57,7 +53,7 @@ export interface KeycloakConfig {
     realm: RealmRepresentation
     scope: ClientScopeRepresentation
     protocolMapper: ProtocolMapperRepresentation;
-    component:ComponentRepresentation
+    component: ComponentRepresentation
 }
 
 function deepen(obj) {
@@ -87,10 +83,3 @@ export interface ClientMessage extends NodeMessageInFlow {
         client: ClientRepresentation;
     }
 }
-
-
-
-
-
-
-

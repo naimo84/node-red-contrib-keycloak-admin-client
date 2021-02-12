@@ -24,7 +24,7 @@ module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
 
 
-        const cloudConfig = {
+        const nodeConfig = {
             baseUrl: config?.baseUrl,
             realmName: node?.realmName || 'master',
             username: config?.credentials?.username,
@@ -39,20 +39,20 @@ module.exports = function (RED: any) {
 
         switch (node?.realmNametype) {
             case 'msg':
-                cloudConfig.realmName = msg[node.realmName]
+                nodeConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
-                cloudConfig.realmName = node?.realmName
+                nodeConfig.realmName = node?.realmName
                 break;
             case 'flow':
-                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                nodeConfig.realmName = node.context().flow.get(node.realmName)
                 break;
             case 'global':
-                cloudConfig.realmName = node.context().global.get(node.realmName)
+                nodeConfig.realmName = node.context().global.get(node.realmName)
                 break;
         }
 
-        return cloudConfig;
+        return nodeConfig;
     }
 
     function realmNode(config: any) {
@@ -85,57 +85,61 @@ module.exports = function (RED: any) {
         let payload: RealmPayload | any = {
 
         };
-
-        if (!kcConfig.action || kcConfig.action === 'get') {
-            payload.realms = await kcAdminClient.realms.find();
-        }
-        else if (kcConfig.action === 'create') {
-            //@ts-ignore
-            if (kcConfig.realmName) {
-                //@ts-ignore
-                kcConfig.realm.realm = kcConfig.realmName;
+        try {
+            if (!kcConfig.action || kcConfig.action === 'get') {
+                payload.realms = await kcAdminClient.realms.find();
             }
+            else if (kcConfig.action === 'create') {
+                //@ts-ignore
+                if (kcConfig.realmName) {
+                    //@ts-ignore
+                    kcConfig.realm.realm = kcConfig.realmName;
+                }
 
-            try {
-                let oldRealm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                if (!oldRealm) {
-                    let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
+                try {
+                    let oldRealm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+                    if (!oldRealm) {
+                        let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
+                        payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
+                        node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
+                    } else {
+                        payload.realm = oldRealm;
+                        node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
+                    }
+                } catch (err) {
                     payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })
-                } else {
-                    payload.realm = oldRealm;
                     node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
                 }
-            } catch (err) {
-                payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} already exists` })
+            } else if (kcConfig.action === 'getExecutions') {
+                kcAdminClient.setConfig({
+                    realmName: kcConfig.realmName,
+                });
+                let executions = await kcAdminClient.authenticationManagement.getExecutions({ flow: 'browser' })
+                payload = executions
+            } else if (kcConfig.action === 'updateExecutionConfig') {
+                let token = await kcAdminClient.getAccessToken()
+                await axios({
+                    baseURL: `${kcConfig.baseUrl}/admin/realms/${kcConfig.realmName}/authentication/executions/${msg.payload.execution_id}/config`,
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    method: 'POST',
+                    data: msg.payload.config
+                })
+                node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
+
             }
-        } else if (kcConfig.action === 'getExecutions') {
-            kcAdminClient.setConfig({
-                realmName: kcConfig.realmName,
+
+            let newMsg = Object.assign(RED.util.cloneMessage(msg), {
+                payload: payload,
+                realm: kcConfig.realmName
             });
-            let executions = await kcAdminClient.authenticationManagement.getExecutions({ flow: 'browser' })
-            payload = executions
-        } else if (kcConfig.action === 'updateExecutionConfig') {
-            let token = await kcAdminClient.getAccessToken()
-            await axios({
-                baseURL: `${kcConfig.baseUrl}/admin/realms/${kcConfig.realmName}/authentication/executions/${msg.payload.execution_id}/config`,
-                headers: { 'Authorization': `Bearer ${token}` },
-                method: 'POST',
-                data: msg.payload.config
-            })
-            node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
+
+            send(newMsg)
+            if (done) done();
+        } catch (err) {
+            node.status({ shape: 'dot', fill: 'red', text: `${err}` })
+            if (done) done(err);
 
         }
-
-        let newMsg = Object.assign(RED.util.cloneMessage(msg), {
-            payload: payload,
-            realm: kcConfig.realmName
-        });
-
-        send(newMsg)
-        if (done) done();
-
         setTimeout(() => node.status({ text: `` }), 10000)
     }
 

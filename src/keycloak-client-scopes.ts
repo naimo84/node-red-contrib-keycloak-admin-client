@@ -14,48 +14,44 @@ export interface ClientScopeMessage extends NodeMessageInFlow {
 
 module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
-
-
-        const cloudConfig = {
+        const nodeConfig = {
             baseUrl: config?.baseUrl,
             realmName: node?.realmName || 'master',
             username: config?.credentials?.username,
             password: config?.credentials?.password,
             grantType: config?.grantType || 'password',
-            clientId: config?.clientId || msg?.clientId || 'admin-cli',
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
-            client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client),
         } as KeycloakConfig;
 
         switch (node?.realmNametype) {
             case 'msg':
-                cloudConfig.realmName = msg[node.realmName]
+                nodeConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
-                cloudConfig.realmName =node?.realmName
+                nodeConfig.realmName =node?.realmName
                 break;
             case 'flow':
-                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                nodeConfig.realmName = node.context().flow.get(node.realmName)
                 break;
             case 'global':
-                cloudConfig.realmName = node.context().global.get(node.realmName)
+                nodeConfig.realmName = node.context().global.get(node.realmName)
                 break;
         }
 
         if (node?.protocolMappertype !== 'json') {
-            cloudConfig.protocolMapper = msg[node.protocolMapper]
+            nodeConfig.protocolMapper = msg[node.protocolMapper]
         } else {
-            cloudConfig.protocolMapper = JSON.parse(node?.protocolMapper)
+            nodeConfig.protocolMapper = JSON.parse(node?.protocolMapper)
         }
 
         if (node?.scopetype !== 'json') {
-            cloudConfig.scope = msg[node.scope]
+            nodeConfig.scope = msg[node.scope]
         } else {
-            cloudConfig.scope = JSON.parse(node?.scope)
+            nodeConfig.scope = JSON.parse(node?.scope)
         }
 
-        return cloudConfig;
+        return nodeConfig;
     }
 
     function clientScopeNode(config: any) {
@@ -135,8 +131,8 @@ module.exports = function (RED: any) {
             send(newMsg)
             if (done) done();
         } catch (err) {
+            node.status({ shape: 'dot', fill: 'red', text: `${err}` })
             if (done) done(err);
-
         }
 
         setTimeout(() => node.status({ text: `` }), 10000)

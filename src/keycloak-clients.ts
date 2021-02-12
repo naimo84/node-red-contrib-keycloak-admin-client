@@ -6,7 +6,7 @@ import { compile } from "handlebars";
 
 module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
-        const cloudConfig = {
+        const nodeConfig = {
             baseUrl: config?.baseUrl,
             realmName: node?.realmName || 'master',
             username: config?.credentials?.username,
@@ -20,20 +20,20 @@ module.exports = function (RED: any) {
 
         switch (node?.realmNametype) {
             case 'msg':
-                cloudConfig.realmName = msg[node.realmName]
+                nodeConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
-                cloudConfig.realmName = node?.realmName
+                nodeConfig.realmName = node?.realmName
                 break;
             case 'flow':
-                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                nodeConfig.realmName = node.context().flow.get(node.realmName)
                 break;
             case 'global':
-                cloudConfig.realmName = node.context().global.get(node.realmName)
+                nodeConfig.realmName = node.context().global.get(node.realmName)
                 break;
         }
 
-        return cloudConfig;
+        return nodeConfig;
     }
 
     function clientsNode(config: any) {
@@ -83,7 +83,6 @@ module.exports = function (RED: any) {
                     payload = Object.assign(client, await kcAdminClient.clients.create(client));
                     node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} created` })
                 } catch (err) {
-
                     let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
                     payload = payloadClients ? payloadClients[0] : {}
                     //@ts-ignore
@@ -95,20 +94,19 @@ module.exports = function (RED: any) {
                 payload = Object.assign(client, { secret: secret.value })
             }
 
+            let newMsg = Object.assign(RED.util.cloneMessage(msg), {
+                payload: payload,
+                realm: kcConfig.realmName
+            });
+
+            send(newMsg)
+            if (done) done();
+
         } catch (err) {
-            console.log(err);
-
-            payload = await kcAdminClient.clients.find();
+            node.status({ shape: 'dot', fill: 'red', text: `${err}` })
+            if (done) done(err);
         }
-
-        let newMsg = Object.assign(RED.util.cloneMessage(msg), {
-            payload: payload,
-            realm: kcConfig.realmName
-        });
-
-        send(newMsg)
         setTimeout(() => node.status({ text: `` }), 10000)
-        if (done) done();
     }
 
     RED.nodes.registerType("keycloak-clients", clientsNode);

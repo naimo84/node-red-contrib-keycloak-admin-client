@@ -2,7 +2,6 @@
 import { NodeMessageInFlow, NodeMessage } from "node-red";
 import { KeycloakConfig, mergeDeep } from "./helper";
 import KcAdminClient from 'keycloak-admin';
-import axios, { AxiosRequestConfig, Method } from 'axios';
 
 export interface RealmMessage extends NodeMessageInFlow {
     payload: {
@@ -12,36 +11,39 @@ export interface RealmMessage extends NodeMessageInFlow {
 }
 
 module.exports = function (RED: any) {
-
-
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
-        const cloudConfig = {
+        const nodeConfig = {
             baseUrl: config?.baseUrl,
             realmName: node?.realmName || 'master',
             username: config?.credentials?.username,
             password: config?.credentials?.password,
             grantType: config?.grantType || 'password',
-            clientId: config?.clientId || msg?.clientId || 'admin-cli',
             name: msg?.name || config?.name,
-            action: msg?.action || node?.action || 'get',
-            provider: node?.providertype !== 'json' ? msg?.payload?.provider : JSON.parse(node?.provider)
+            action: msg?.action || node?.action || 'get'
         } as KeycloakConfig;
+
+        if (node?.providertype !== 'json') {
+            nodeConfig.provider = msg[node.provider]
+        } else {
+            nodeConfig.provider = JSON.parse(node?.provider)
+        }
+
         switch (node?.realmNametype) {
             case 'msg':
-                cloudConfig.realmName = msg[node.realmName]
+                nodeConfig.realmName = msg[node.realmName]
                 break;
             case 'str':
-                cloudConfig.realmName = node?.realmName
+                nodeConfig.realmName = node?.realmName
                 break;
             case 'flow':
-                cloudConfig.realmName = node.context().flow.get(node.realmName)
+                nodeConfig.realmName = node.context().flow.get(node.realmName)
                 break;
             case 'global':
-                cloudConfig.realmName = node.context().global.get(node.realmName)
+                nodeConfig.realmName = node.context().global.get(node.realmName)
                 break;
         }
 
-        return cloudConfig;
+        return nodeConfig;
     }
 
     function identityProviderNode(config: any) {
@@ -56,7 +58,6 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -80,22 +81,28 @@ module.exports = function (RED: any) {
             if (!kcConfig.action || kcConfig.action === 'get') {
                 payload = await kcAdminClient.identityProviders.find();
             } else if (kcConfig.action === 'create') {
-                //@ts-ignore
-                if (msg.payload?.provider) {
+                try {
                     //@ts-ignore
-                    kcConfig.provider = mergeDeep(kcConfig.provider, msg.payload.provider)
+                    if (msg.payload?.provider) {
+                        //@ts-ignore
+                        kcConfig.provider = mergeDeep(kcConfig.provider, msg.payload.provider)
+                    }
+
+                    payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
+                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.provider.displayName} created` })
+                } catch {
+                    payload = {
+                        created: false
+                    }
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
                 }
-
-                payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
-                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.provider.displayName} created` })
-
             } else if (kcConfig.action === 'getMappers') {
                 payload = await kcAdminClient.identityProviders.findMappers({ alias: 'myodav' });
             } else if (kcConfig.action === 'addMapper') {
                 await kcAdminClient.identityProviders.createMapper({
                     alias: "myodav",
                     identityProviderMapper: {
-                        config: {                            
+                        config: {
                             claims: `[{"key":"organisation","value":"^ 24$|^ 100$"}]`,
                             role: "CRM",
                             syncMode: "FORCE",
@@ -108,24 +115,21 @@ module.exports = function (RED: any) {
                     }
                 })
             }
-        } catch (err) {
-            payload = {
-                created: false
-            }
-            node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
-            console.log(err);
 
+            let newMsg = Object.assign(RED.util.cloneMessage(msg), {
+                payload: payload,
+                realm: kcConfig.realmName
+            });
+
+            send(newMsg)
+            if (done) done();
+
+        } catch (err) {
+            node.status({ shape: 'dot', fill: 'red', text: `${err}` })
+            if (done) done(err);
         }
 
-        let newMsg = Object.assign(RED.util.cloneMessage(msg), {
-            payload: payload,
-            realm: kcConfig.realmName
-        });
-
-        send(newMsg)
-
         setTimeout(() => node.status({ text: `` }), 10000)
-        if (done) done();
     }
 
     RED.nodes.registerType("keycloak-identity-providers", identityProviderNode);
