@@ -15,9 +15,15 @@ module.exports = function (RED: any) {
             clientId: config?.clientId || msg?.clientId || 'admin-cli',
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
-            client: node?.clienttype !== 'json' ? msg?.payload?.client : JSON.parse(node?.client)
         } as KeycloakConfig;
 
+        if (node?.clienttype !== 'json') {
+            nodeConfig.client = msg[node.client]
+        }
+        else {
+            nodeConfig.client = JSON.parse(node?.client)
+        }
+        
         switch (node?.realmNametype) {
             case 'msg':
                 nodeConfig.realmName = msg[node.realmName]
