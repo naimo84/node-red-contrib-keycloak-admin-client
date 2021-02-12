@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 0.0.4 (2021-02-12)
+
+
+### Features
+
+* clone input msg ([d137a0b](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/d137a0be6c388d6d85c3e4b0b39d91ee560bf3f8))
+* identityProvider, components, one step closer to working version ([74a50c9](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/74a50c9de1041498f5971128c504b45259c965df))
+* initial commit ([e0d2355](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/e0d2355282735dca7cfb191d795231b423ec7f09))
+* most of the properties are configurable via str,msg,flow,global ([3a620b5](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/3a620b5bb5c80474c8bb1a29d2f30399474ca1d9))
+* node status for created / exists ([56aa661](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/56aa6617e57e05a8855d21ac7d63eb30ab68f2bb))
+
+
+### Bug Fixes
+
+* minor fixes for realName ([57c4f62](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/57c4f62b9c8255729aadb6cf9185ce6c21a55e37))
+* realmName instead of realname ([88ef907](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/88ef907e42af7214cc9c2bf6be8997de668a8575))
+
 ## [1.0.0-beta.1](https://github.com/naimo84/node-red-contrib-ical-events/compare/v0.22.0...v1.0.0-beta.1) (2021-01-17)
 
 
