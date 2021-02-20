@@ -7,6 +7,7 @@ import IdentityProviderRepresentation from 'keycloak-admin/lib/defs/identityProv
 import RealmRepresentation from 'keycloak-admin/lib/defs/realmRepresentation';
 import ClientScopeRepresentation from 'keycloak-admin/lib/defs/clientScopeRepresentation';
 import ComponentRepresentation from 'keycloak-admin/lib/defs/componentRepresentation';
+import UserRepresentation from 'keycloak-admin/lib/defs/userRepresentation';
 
 export interface IcalNode extends Node {
     config: any;
@@ -53,7 +54,8 @@ export interface KeycloakConfig {
     realm: RealmRepresentation
     scope: ClientScopeRepresentation
     protocolMapper: ProtocolMapperRepresentation;
-    component: ComponentRepresentation
+    component: ComponentRepresentation,
+    user: UserRepresentation
 }
 
 function deepen(obj) {
@@ -81,5 +83,11 @@ function deepen(obj) {
 export interface ClientMessage extends NodeMessageInFlow {
     payload: {
         client: ClientRepresentation;
+    }
+}
+
+export interface UserMessage extends NodeMessageInFlow {
+    payload: {
+        user: UserRepresentation;
     }
 }

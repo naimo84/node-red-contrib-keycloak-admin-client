@@ -32,7 +32,8 @@
       "keycloak-realms": "dist/keycloak-realms.js",
       "keycloak-identity-providers": "dist/keycloak-identity-providers.js",
       "keycloak-client-scopes": "dist/keycloak-client-scopes.js",
-      "keycloak-components": "dist/keycloak-components.js"
+      "keycloak-components": "dist/keycloak-components.js",
+      "keycloak-users": "dist/keycloak-users.js"
     }
   },
   "repository": {
