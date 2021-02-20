@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.5](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.4...v0.0.5) (2021-02-20)
+
+
+### Features
+
+* added keycloak users ([2b9d998](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/2b9d998bcb2d6b9c77f760dc89bcf6b42eb59b7a))
+
 ### 0.0.4 (2021-02-12)
 
 
