@@ -23,52 +23,23 @@ module.exports = function (RED: any) {
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
         } as KeycloakConfig;
-
-        switch (node?.realmNametype) {
-            case 'msg':
-                nodeConfig.realmName = msg[node.realmName]
-                break;
-            case 'str':
-                nodeConfig.realmName =node?.realmName
-                break;
-            case 'flow':
-                nodeConfig.realmName = node.context().flow.get(node.realmName)
-                break;
-            case 'global':
-                nodeConfig.realmName = node.context().global.get(node.realmName)
-                break;
-        }
-
-        if (node?.protocolMappertype !== 'json') {
-            nodeConfig.protocolMapper = msg[node.protocolMapper]
-        } else {
-            nodeConfig.protocolMapper = JSON.parse(node?.protocolMapper)
-        }
-
-        if (node?.scopetype !== 'json') {
-            nodeConfig.scope = msg[node.scope]
-        } else {
-            nodeConfig.scope = JSON.parse(node?.scope)
-        }
-
+        nodeConfig.protocolMapper = node.protocolMapper
+        nodeConfig.scope = node.scope
         return nodeConfig;
     }
 
     function clientScopeNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
-        node.realmName = config.realmName;
-        node.realmNametype = config.realmNametype;
 
-        node.scope = config.scope;
-        node.scopetype = config.scopetype;
-        node.protocolMapper = config.protocolMapper;
-        node.protocolMappertype = config.protocolMappertype;
         node.action = config.action;
         node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
+                node.scope = RED.util.evaluateNodeProperty(config.scope, config.scopetype, node, msg);
+                if(!!config.protocolMapper) node.protocolMapper = RED.util.evaluateNodeProperty(config.protocolMapper, config.protocolMappertype, node, msg);
+                node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
 
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
@@ -91,7 +62,11 @@ module.exports = function (RED: any) {
         });
         try {
             if (!kcConfig.action || kcConfig.action === 'get') {
-                payload = await kcAdminClient.clientScopes.find();
+                if (!kcConfig.scope) {
+                    payload = await kcAdminClient.clientScopes.find();
+                } else {
+                    payload = await kcAdminClient.clientScopes.findOneByName({ name: kcConfig.scope.name });
+                }
             } else if (kcConfig.action === 'create') {
                 try {
                     await kcAdminClient.clientScopes.create(kcConfig.scope)
