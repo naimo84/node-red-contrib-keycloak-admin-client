@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.5...v0.0.6) (2021-03-19)
+
+
+### Features
+
+* RED.util.evaluateNodeProperty ([aca1f45](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/aca1f45078e416ecd08c72fbf0f5f3b287cd8bec))
+
 ### [0.0.5](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.4...v0.0.5) (2021-02-20)
 
 
