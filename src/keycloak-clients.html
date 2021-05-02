@@ -1,12 +1,10 @@
 <script type="text/javascript">
-
-
     RED
         .nodes
         .registerType('keycloak-clients', {
             category: 'keycloak',
             defaults: {
-                name:{}   ,
+                name: {},
                 confignode: {
                     value: "",
                     type: "keycloak-config",
@@ -16,7 +14,9 @@
                 realmNametype: {},
                 client: {},
                 clienttype: {},
-                action:{}
+                role: {},
+                roletype: {},
+                action: {}
             },
             inputs: 1,
             outputs: 1,
@@ -28,19 +28,52 @@
                     return this.confignode.name;
                 }
 
-                return "clients";
+                return `clients - ${this.action}`;
             },
             icon: "icon.svg",
             paletteLabel: "clients",
             oneditprepare: function () {
                 var node = this;
                 $("#node-input-realmName").typedInput({
-                    types: ["str","msg", "flow","global"],
+                    types: ["str", "msg", "flow", "global"],
                     typeField: "#node-input-realmNametype"
-                }); 
+                });
+                $("#node-input-role").typedInput({
+                    types: ["str", "msg"],
+                    typeField: "#node-input-roletype"
+                });
                 $("#node-input-client").typedInput({
                     types: ["msg", "json", "str"],
                     typeField: "#node-input-clienttype"
+                });
+                $('#node-input-action').change(function () {
+                    var value = $('#node-input-action').val();
+                    switch (value) {
+                        case 'get':
+                            $('#node-input-client').parent().show();
+                            $('#node-input-role').parent().hide();
+                            break;
+                        case 'getSecret':
+                            $('#node-input-client').parent().show();
+                            $('#node-input-role').parent().hide();
+                            break;
+                        case 'addServiceAccountRole':
+                            $('#node-input-client').parent().show();
+                            $('#node-input-role').parent().show();
+                            break;
+                        case 'create':
+                            $('#node-input-client').parent().show();
+                            $('#node-input-role').parent().hide();
+                            break;
+                        case 'update':
+                            $('#node-input-client').parent().show();
+                            $('#node-input-role').parent().hide();
+                            break;
+                        default:
+                            $('#node-input-client').parent().show();
+                            $('#node-input-role').parent().hide();
+                    }
+
                 });
             }
         });
@@ -83,14 +116,21 @@
   
     <div class="form-row elastic">
         <label for="node-input-client"><i class="fa fa-globe"></i> <span>Client definition</span></label>
-        <input type="text" id="node-input-client" style="width: 70%">
+        <input type="text" id="node-input-client">
         <input type="text" id="node-input-clienttype">
+    </div>  
+    <div class="form-row elastic">
+        <label for="node-input-role"><i class="fa fa-globe"></i> <span>role definition</span></label>
+        <input type="text" id="node-input-role">
+        <input type="text" id="node-input-roletype">
     </div>  
     <div class="form-row event">
         <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
         <select id="node-input-action">          
           <option value="get">get</option>
           <option value="create">create</option>
+          <option value="update">update</option>
+          <option value="addServiceAccountRole">addServiceAccountRole</option>
           <option value="getSecret">getSecret</option>
         </select>
     </div>

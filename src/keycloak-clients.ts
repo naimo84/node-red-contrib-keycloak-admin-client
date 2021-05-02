@@ -15,29 +15,10 @@ module.exports = function (RED: any) {
             clientId: config?.clientId || msg?.clientId || 'admin-cli',
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
+            client: node.client,
+            role: node.role,
         } as KeycloakConfig;
 
-        if (node?.clienttype !== 'json') {
-            nodeConfig.client = msg[node.client]
-        }
-        else {
-            nodeConfig.client = JSON.parse(node?.client)
-        }
-        
-        switch (node?.realmNametype) {
-            case 'msg':
-                nodeConfig.realmName = msg[node.realmName]
-                break;
-            case 'str':
-                nodeConfig.realmName = node?.realmName
-                break;
-            case 'flow':
-                nodeConfig.realmName = node.context().flow.get(node.realmName)
-                break;
-            case 'global':
-                nodeConfig.realmName = node.context().global.get(node.realmName)
-                break;
-        }
 
         return nodeConfig;
     }
@@ -45,16 +26,15 @@ module.exports = function (RED: any) {
     function clientsNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
-        node.realmName = config.realmName;
-        node.realmNametype = config.realmNametype;
         node.action = config.action;
-        node.client = config.client;
-        node.clienttype = config.clienttype;
+
         node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-
+                node.client = RED.util.evaluateNodeProperty(config.client, config.clienttype, node, msg);
+                node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
+                node.role = RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg);
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -76,7 +56,8 @@ module.exports = function (RED: any) {
         });
         try {
             if (!kcConfig.action || kcConfig.action === 'get') {
-                payload = await kcAdminClient.clients.find();
+                let client = kcConfig.client;
+                payload = await kcAdminClient.clients.find(client);
 
             } else if (kcConfig.action === 'create') {
                 let client = kcConfig.client;
@@ -85,9 +66,27 @@ module.exports = function (RED: any) {
                 }
                 const template = compile(JSON.stringify(client));
                 client = JSON.parse(template({ msg: msg }));
+
                 try {
                     payload = Object.assign(client, await kcAdminClient.clients.create(client));
                     node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} created` })
+                } catch (err) {
+                    let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
+                    payload = payloadClients ? payloadClients[0] : {}
+                    //@ts-ignore
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${client.clientId} already exists` })
+                }
+            } else if (kcConfig.action === 'update') {
+                let client = kcConfig.client;
+                if (msg?.payload?.client) {
+                    client = Object.assign(client, msg.payload.client)
+                }
+                const template = compile(JSON.stringify(client));
+                client = JSON.parse(template({ msg: msg }));
+
+                try {
+                    payload = Object.assign(client, await kcAdminClient.clients.update({ id: client?.id }, client));
+                    node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} updated` })
                 } catch (err) {
                     let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
                     payload = payloadClients ? payloadClients[0] : {}
@@ -98,6 +97,23 @@ module.exports = function (RED: any) {
                 let client = Object.assign(msg.payload, { realm: kcConfig.realmName }) as any;
                 let secret = await kcAdminClient.clients.getClientSecret(client)
                 payload = Object.assign(client, { secret: secret.value })
+            } else if (kcConfig.action === 'addServiceAccountRole') {
+                const serviceAccountUser = await kcAdminClient.clients.getServiceAccountUser({ id: kcConfig.client.id });
+                let role = kcConfig.role;
+                if (!serviceAccountUser?.realmRoles?.includes(role)) {
+                    let currentRole = await addRealmRole(kcAdminClient, role);
+                    await kcAdminClient.users.addRealmRoleMappings({
+                        id: serviceAccountUser.id,
+                        roles: [
+                            {
+                                id: currentRole.id,
+                                name: currentRole.name,
+                            },
+                        ],
+                    });
+                    node.status({ shape: 'dot', fill: 'green', text: `role ${currentRole.name} added to ${kcConfig.client.name}` })
+
+                }
             }
 
             let newMsg = Object.assign(RED.util.cloneMessage(msg), {
@@ -113,6 +129,19 @@ module.exports = function (RED: any) {
             if (done) done(err);
         }
         setTimeout(() => node.status({ text: `` }), 10000)
+    }
+
+    async function addRealmRole(kcAdminClient: KcAdminClient, role: string) {
+        let retRole = await kcAdminClient.roles.findOneByName({ name: role })
+        if (!retRole) {
+            await kcAdminClient.roles.create({
+                name: role,
+                description: role,
+                scopeParamRequired: false
+            })
+            retRole = await kcAdminClient.roles.findOneByName({ name: role })
+        }
+        return retRole;
     }
 
     RED.nodes.registerType("keycloak-clients", clientsNode);
