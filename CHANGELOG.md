@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.8](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.7...v0.0.8) (2021-05-03)
+
+
+### Features
+
+* roles can be an array ([c99168d](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/c99168da6e66aba26bcc368992b965e523c264e7))
+
 ### [0.0.7](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.6...v0.0.7) (2021-05-02)
 
 
