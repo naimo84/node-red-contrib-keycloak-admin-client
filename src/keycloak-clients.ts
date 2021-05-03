@@ -135,10 +135,10 @@ module.exports = function (RED: any) {
 
 
     function convertToArray(obj): string[] {
-        if (obj.role instanceof Array) {
-            return obj.role;
+        if (obj instanceof Array) {
+            return obj;
         } else {
-            return [obj.role];
+            return [obj];
         }
     }
 
