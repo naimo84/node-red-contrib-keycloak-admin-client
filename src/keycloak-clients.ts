@@ -99,20 +99,22 @@ module.exports = function (RED: any) {
                 payload = Object.assign(client, { secret: secret.value })
             } else if (kcConfig.action === 'addServiceAccountRole') {
                 const serviceAccountUser = await kcAdminClient.clients.getServiceAccountUser({ id: kcConfig.client.id });
-                let role = kcConfig.role;
-                if (!serviceAccountUser?.realmRoles?.includes(role)) {
-                    let currentRole = await addRealmRole(kcAdminClient, role);
-                    await kcAdminClient.users.addRealmRoleMappings({
-                        id: serviceAccountUser.id,
-                        roles: [
-                            {
-                                id: currentRole.id,
-                                name: currentRole.name,
-                            },
-                        ],
-                    });
-                    node.status({ shape: 'dot', fill: 'green', text: `role ${currentRole.name} added to ${kcConfig.client.name}` })
 
+                let roles = convertToArray(kcConfig.role);
+                for (let role of roles) {
+                    if (!serviceAccountUser?.realmRoles?.includes(role)) {
+                        let currentRole = await addRealmRole(kcAdminClient, role);
+                        await kcAdminClient.users.addRealmRoleMappings({
+                            id: serviceAccountUser.id,
+                            roles: [
+                                {
+                                    id: currentRole.id,
+                                    name: currentRole.name,
+                                },
+                            ],
+                        });
+                        node.status({ shape: 'dot', fill: 'green', text: `role ${currentRole.name} added to ${kcConfig.client.name}` })
+                    }
                 }
             }
 
@@ -129,6 +131,15 @@ module.exports = function (RED: any) {
             if (done) done(err);
         }
         setTimeout(() => node.status({ text: `` }), 10000)
+    }
+
+
+    function convertToArray(obj): string[] {
+        if (obj.role instanceof Array) {
+            return obj.role;
+        } else {
+            return [obj.role];
+        }
     }
 
     async function addRealmRole(kcAdminClient: KcAdminClient, role: string) {
