@@ -4,16 +4,16 @@
         .registerType('keycloak-config', {
             category: 'config',
             defaults: {
-                baseUrl: {
-                    value: '',
-                },
-                name: {
-                    value: '',
-                },               
+                baseUrl: { value: '' },
+                baseUrlEnv: {  },
+                usernameEnv: { },
+                passwordEnv: {  },
+                name: { value: '' },
+                useenv: { default: false }
             },
             credentials: {
-                username: { type: "text"},
-                password: { type: "password"},
+                username: { type: "text" },
+                password: { type: "password" },
             },
             label: function () {
                 if (this.name) {
@@ -23,8 +23,16 @@
             },
             oneditprepare: function () {
                 var node = this;
-
-
+                $('#node-config-input-useenv').change(function () {
+                    var value = $('#node-config-input-useenv').prop('checked');
+                    if (value) {
+                        $('#env').show();
+                        $('#noenv').hide();
+                    } else {
+                        $('#noenv').show();
+                        $('#env').hide();
+                    }
+                });
             },
         });
 </script>
@@ -38,23 +46,53 @@
     </div>
     <hr/>
     <div class="form-row" style="display:flex">
-        <label for="node-config-input-baseUrl" style="min-width:160px !important">
-            <i class="fa fa-link"></i>
-            <span>url to keycloak- server:</span></label>
-        <input type="text" id="node-config-input-baseUrl" placeholder="" style="width:100% !important">
-    </div>
-   
-    <div class="form-row">
-        <label for="node-config-input-username" style="width:160px !important">
+        <label for="node-config-input-useenv" style="width:160px !important">
             <i class="fa fa-key"></i>
-            <span>username:</span></label>
-        <input type="text" id="node-config-input-username" placeholder="" style="width:280px !important">
+            <span>use env:</span></label>
+        <input type="checkbox" id="node-config-input-useenv" style="width:16px !important"/>
     </div>
-    <div class="form-row">
-        <label for="node-config-input-password" style="width:160px !important">
-            <i class="fa fa-key"></i>
-            <span>password:</span></label>
-        <input type="password" id="node-config-input-password" placeholder="" style="width:280px !important">
+    <div id="noenv">
+        <div class="form-row" style="display:flex">
+            <label for="node-config-input-baseUrl" style="min-width:160px !important">
+                <i class="fa fa-link"></i>
+                <span>url to keycloak- server:</span></label>
+            <input type="text" id="node-config-input-baseUrl" placeholder="" style="width:100% !important">
+        </div>   
+        <div class="form-row">
+            <label for="node-config-input-username" style="width:160px !important">
+                <i class="fa fa-key"></i>
+                <span>username:</span></label>
+            <input type="text" id="node-config-input-username" placeholder="" style="width:280px !important">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-password" style="width:160px !important">
+                <i class="fa fa-key"></i>
+                <span>password:</span></label>
+            <input type="password" id="node-config-input-password" placeholder="" style="width:280px !important">
+        </div>
+    </div>  
+
+
+
+    <div id="env">
+        <div class="form-row" style="display:flex">
+            <label for="node-config-input-baseUrlEnv" style="min-width:160px !important">
+                <i class="fa fa-link"></i>
+                <span>url to keycloak- server:</span></label>
+            <input type="text" id="node-config-input-baseUrlEnv" placeholder="" style="width:100% !important">
+        </div>   
+        <div class="form-row">
+            <label for="node-config-input-usernameEnv" style="width:160px !important">
+                <i class="fa fa-key"></i>
+                <span>username:</span></label>
+            <input type="text" id="node-config-input-usernameEnv" placeholder="" style="width:280px !important">
+        </div>
+        <div class="form-row">
+            <label for="node-config-input-passwordEnv" style="width:160px !important">
+                <i class="fa fa-key"></i>
+                <span>password:</span></label>
+            <input type="text" id="node-config-input-passwordEnv" placeholder="" style="width:280px !important">
+        </div>
     </div>
 </script>
 

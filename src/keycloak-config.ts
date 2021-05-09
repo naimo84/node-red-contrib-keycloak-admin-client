@@ -7,18 +7,22 @@ module.exports = function (RED: any) {
 
         this.name = config.name;
         this.baseUrl = config.baseUrl;
+        this.baseUrlEnv = config.baseUrlEnv;
+        this.usernameEnv = config.usernameEnv;
+        this.passwordEnv = config.passwordEnv;
+        this.useenv = config.useenv;
 
         let node = this;
-        node.getKcAdminClient = async ():Promise<KcAdminClient> => {
+        node.getKcAdminClient = async (): Promise<KcAdminClient> => {        
             const kcAdminClient = new KcAdminClient({
-                baseUrl: node.baseUrl,
+                baseUrl: node.useenv ? process.env[node.baseUrlEnv] : node.baseUrl,
                 realmName: 'master'
             });
 
             await kcAdminClient.auth({
-                username: node.credentials.username,
-                password: node.credentials.password,
-                grantType: node.grantType ||'password',
+                username: node.useenv ? process.env[node.usernameEnv] : node.credentials.username,
+                password: node.useenv ? process.env[node.passwordEnv] : node.credentials.password,
+                grantType: node.grantType || 'password',
                 clientId: node.clientId || 'admin-cli'
             });
 
