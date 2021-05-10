@@ -15,7 +15,7 @@ export interface ClientScopeMessage extends NodeMessageInFlow {
 module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
         const nodeConfig = {
-            baseUrl: config?.baseUrl,
+            baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
             realmName: node?.realmName || 'master',
             username: config?.credentials?.username,
             password: config?.credentials?.password,
