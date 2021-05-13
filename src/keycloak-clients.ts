@@ -1,6 +1,6 @@
 
 import { NodeMessageInFlow, NodeMessage, Node } from "node-red";
-import { ClientMessage, KeycloakConfig } from "./helper";
+import { ClientMessage, KeycloakConfig, mergeDeep } from "./helper";
 import KcAdminClient from 'keycloak-admin';
 import { compile } from "handlebars";
 
@@ -62,7 +62,7 @@ module.exports = function (RED: any) {
             } else if (kcConfig.action === 'create') {
                 let client = kcConfig.client;
                 if (msg?.payload?.client) {
-                    client = Object.assign(client, msg.payload.client)
+                    client = mergeDeep(client, msg.payload.client)
                 }
                 const template = compile(JSON.stringify(client));
                 client = JSON.parse(template({ msg: msg }));
@@ -79,7 +79,7 @@ module.exports = function (RED: any) {
             } else if (kcConfig.action === 'update') {
                 let client = kcConfig.client;
                 if (msg?.payload?.client) {
-                    client = Object.assign(client, msg.payload.client)
+                    client = mergeDeep(client, msg.payload.client)
                 }
                 const template = compile(JSON.stringify(client));
                 client = JSON.parse(template({ msg: msg }));

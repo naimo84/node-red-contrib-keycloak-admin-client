@@ -1,6 +1,6 @@
 
 import { NodeMessageInFlow, NodeMessage } from "node-red";
-import { KeycloakConfig } from "./helper";
+import { KeycloakConfig, mergeDeep } from "./helper";
 import KcAdminClient from 'keycloak-admin';
 import axios, { AxiosRequestConfig, Method } from 'axios';
 import RealmRepresentation from "keycloak-admin/lib/defs/realmRepresentation";
@@ -9,6 +9,7 @@ export interface RealmMessage extends NodeMessageInFlow {
     payload: {
         execution_id: string;
         config: any;
+        realm: any;
     }
 }
 
@@ -98,7 +99,10 @@ module.exports = function (RED: any) {
 
                 try {
                     let oldRealm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
-                    if (!oldRealm) {
+                    if (!oldRealm) {                      
+                        if (msg?.payload?.realm) {                          
+                            kcConfig.realm = mergeDeep(kcConfig.realm || {}, msg.payload.realm)
+                        }
                         let newRealm = await kcAdminClient.realms.create(kcConfig.realm)
                         payload.realm = await kcAdminClient.realms.findOne({ realm: kcConfig.realm.realm });
                         node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.realmName ? kcConfig.realmName : kcConfig.realm.realm} created` })

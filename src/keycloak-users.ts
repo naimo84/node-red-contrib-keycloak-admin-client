@@ -1,6 +1,6 @@
 
 import { NodeMessageInFlow, NodeMessage, Node } from "node-red";
-import { UserMessage, KeycloakConfig } from "./helper";
+import { UserMessage, KeycloakConfig, mergeDeep } from "./helper";
 import KcAdminClient from 'keycloak-admin';
 import { compile } from "handlebars";
 
@@ -8,62 +8,27 @@ module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: node?.realmName || 'master',
-            username: config?.credentials?.username,
-            password: config?.credentials?.password,
+            realmName: node?.realmName || 'master',            
             grantType: config?.grantType || 'password',
             user: config?.user || msg?.user,
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
         } as KeycloakConfig;
-
-        if (node?.usertype !== 'json') {
-            nodeConfig.user = msg[node.user]
-        }
-        else {
-            nodeConfig.user = JSON.parse(node?.user)
-        }
-
-        if (node?.passwordtype !== 'str') {
-            nodeConfig.password = msg[node.password]
-        }
-        else {
-            nodeConfig.password = node?.password
-        }
-
-        switch (node?.realmNametype) {
-            case 'msg':
-                nodeConfig.realmName = msg[node.realmName]
-                break;
-            case 'str':
-                nodeConfig.realmName = node?.realmName
-                break;
-            case 'flow':
-                nodeConfig.realmName = node.context().flow.get(node.realmName)
-                break;
-            case 'global':
-                nodeConfig.realmName = node.context().global.get(node.realmName)
-                break;
-        }
-
         return nodeConfig;
     }
 
     function usersNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
-        node.realmName = config.realmName;
-        node.realmNametype = config.realmNametype;
-        node.action = config.action;
-        node.user = config.user;
-        node.usertype = config.usertype;
-        node.password = config.password;
-        node.passwordtype = config.passwordtype;
+       
+        node.action = config.action;       
         node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-
+                node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
+                node.user = RED.util.evaluateNodeProperty(config.user, config.usertype, node, msg);
+                node.password = RED.util.evaluateNodeProperty(config.password, config.passwordtype, node, msg);
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -90,7 +55,7 @@ module.exports = function (RED: any) {
             } else if (kcConfig.action === 'create') {
                 let user = kcConfig.user;
                 if (msg?.payload?.user) {
-                    user = Object.assign(user, msg.payload.user)
+                    user = mergeDeep(user || {}, msg.payload.user)
                 }
                 const template = compile(JSON.stringify(user));
                 user = JSON.parse(template({ msg: msg }));

@@ -3,7 +3,7 @@ import { NodeMessageInFlow, NodeMessage, EditorRED } from "node-red";
 
 import KcAdminClient from 'keycloak-admin';
 import ClientScopeRepresentation from "keycloak-admin/lib/defs/clientScopeRepresentation";
-import { KeycloakConfig } from "./helper";
+import { KeycloakConfig, mergeDeep } from "./helper";
 
 export interface ClientScopeMessage extends NodeMessageInFlow {
     payload: {
@@ -87,7 +87,7 @@ module.exports = function (RED: any) {
                 //@ts-ignore
                 if (msg.protocolmapper) {
                     //@ts-ignore
-                    kcConfig.protocolMapper = Object.assign(kcConfig.protocolMapper, msg.protocolmapper)
+                    kcConfig.protocolMapper = mergeDeep(kcConfig.protocolMapper, msg.protocolmapper)
                 }
                 let protocolMapper = await kcAdminClient.clientScopes.findProtocolMapperByName({ id, name: kcConfig.protocolMapper.name });
                 if (!protocolMapper) {
