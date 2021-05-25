@@ -10,7 +10,7 @@ module.exports = function (RED: any) {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
             realmName: node?.realmName || 'master',            
             grantType: config?.grantType || 'password',
-            user: config?.user || msg?.user,
+            user: node?.user,
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
         } as KeycloakConfig;
