@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.13](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.12...v0.0.13) (2021-05-25)
+
+
+### Features
+
+* using mergeDeep instead of object.assign ([4d471d8](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4d471d8e3edf8b64043fc6b39e4cd5cb0dc9a193))
+
+
+### Bug Fixes
+
+* users get user from node ([f5f89b7](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/f5f89b71475cf1c44f84c05b3e45e6da8a1786e8))
+
 ### [0.0.12](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.11...v0.0.12) (2021-05-11)
 
 ### [0.0.11](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.10...v0.0.11) (2021-05-10)
