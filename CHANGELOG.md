@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.15](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.14...v0.0.15) (2021-05-31)
+
+
+### Features
+
+* add roles and identityprovidermappers ([9fab5c8](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/9fab5c88b54d4c9142525ecd46ba3be519dbbf84))
+
+
+### Bug Fixes
+
+* node.role has wrong roletype for evaluateNodeProperty ([4182929](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4182929d0a261b91437f67034bd99165cae42a4e))
+
 ### [0.0.14](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.13...v0.0.14) (2021-05-31)
 
 
