@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.14](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.13...v0.0.14) (2021-05-31)
+
+
+### Features
+
+* extend gitignore tgz ([4d9a15f](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4d9a15f5950a81e7fa429b709907af3c555ec0ab))
+
 ### [0.0.13](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.12...v0.0.13) (2021-05-25)
 
 
