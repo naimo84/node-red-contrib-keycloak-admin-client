@@ -1,0 +1,102 @@
+<script type="text/javascript">
+
+
+    RED
+        .nodes
+        .registerType('keycloak-roles', {
+            category: 'keycloak',
+            defaults: {
+                name:{}   ,
+                confignode: {
+                    value: "",
+                    type: "keycloak-config",
+                    required: false
+                },
+                realmName: {},
+                realmNametype: {},
+                role: {},
+                roletype: {},                
+                action:{}
+            },
+            inputs: 1,
+            outputs: 1,
+            color: "#DEBD5C",
+            label: function () {
+                if (this.name) {
+                    return this.name;
+                } else if (this.confignode.name) {
+                    return this.confignode.name;
+                }
+
+                return "roles";
+            },
+            icon: "icon.svg",
+            paletteLabel: "roles",
+            oneditprepare: function () {
+                var node = this;
+                $("#node-input-realmName").typedInput({
+                    types: ["str","msg", "flow","global"],
+                    typeField: "#node-input-realmNametype"
+                }); 
+                $("#node-input-role").typedInput({
+                    types: ["msg", "json", "str"],
+                    typeField: "#node-input-roletype"
+                });              
+            }
+        });
+</script>
+
+<script type="text/x-red" data-template-name="keycloak-roles">
+    <style>
+        .event {
+            display:flex;
+        }
+        .event input {
+            flex:1
+        }
+        .event select {
+            flex:2
+        }
+        .event label {
+            min-width: 110px;
+            align-self: center;
+        }  
+        .padding-top {
+            padding-top: 10px;
+        }
+    </style>   
+
+    <div class="form-row event">        
+        <label for="node-input-name"><i class="fa fa-tag"></i> <span>Name</span></label>
+        <input type="text" id="node-input-name">
+    </div>
+    <hr/>
+    <div class="form-row event">
+        <label for="node-input-confignode"><i class="fa fa-globe"></i> <span>Config</span></label>
+        <input type="text" id="node-input-confignode">
+    </div>
+    <div class="form-row event">
+        <label for="node-input-realmName"><i class="fa fa-globe"></i> <span>realm</span></label>
+        <input type="text" id="node-input-realmName">
+        <input type="text" id="node-input-realmNametype">
+    </div>
+  
+    <div class="form-row elastic">
+        <label for="node-input-role"><i class="fa fa-globe"></i> <span>role definition</span></label>
+        <input type="text" id="node-input-role" style="width: 70%">
+        <input type="text" id="node-input-roletype">
+    </div>    
+    <div class="form-row event">
+        <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
+        <select id="node-input-action">          
+          <option value="get">get</option>
+          <option value="create">create</option>           
+        </select>
+    </div>
+
+</script>
+
+<!-- Simple Help Text -->
+<script type="text/x-red" data-help-name="keycloak-roles">
+
+</script>

@@ -8,6 +8,7 @@ import RealmRepresentation from 'keycloak-admin/lib/defs/realmRepresentation';
 import ClientScopeRepresentation from 'keycloak-admin/lib/defs/clientScopeRepresentation';
 import ComponentRepresentation from 'keycloak-admin/lib/defs/componentRepresentation';
 import UserRepresentation from 'keycloak-admin/lib/defs/userRepresentation';
+import IdentityProviderMapperRepresentation from 'keycloak-admin/lib/defs/identityProviderMapperRepresentation';
 
 export interface IcalNode extends Node {
     config: any;
@@ -55,6 +56,7 @@ export interface KeycloakConfig {
     realm: RealmRepresentation
     scope: ClientScopeRepresentation
     protocolMapper: ProtocolMapperRepresentation;
+    providermapper: IdentityProviderMapperRepresentation;
     component: ComponentRepresentation,
     user: UserRepresentation
 }

@@ -19,6 +19,7 @@ module.exports = function (RED: any) {
             password: config?.credentials?.password,
             grantType: config?.grantType || 'password',
             name: msg?.name || config?.name,
+            providermapper: node?.providermapper,
             action: msg?.action || node?.action || 'get'
         } as KeycloakConfig;
 
@@ -58,6 +59,7 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
+                node.providermapper = RED.util.evaluateNodeProperty(config.providermapper, config.providermappertype, node, msg);
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
             });
@@ -97,23 +99,24 @@ module.exports = function (RED: any) {
                     node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
                 }
             } else if (kcConfig.action === 'getMappers') {
-                payload = await kcAdminClient.identityProviders.findMappers({ alias: 'myodav' });
+                payload = await kcAdminClient.identityProviders.findMappers({ alias: node.providermapper.alias });
             } else if (kcConfig.action === 'addMapper') {
-                await kcAdminClient.identityProviders.createMapper({
-                    alias: "myodav",
-                    identityProviderMapper: {
-                        config: {
-                            claims: `[{"key":"organisation","value":"^ 24$|^ 100$"}]`,
-                            role: "CRM",
-                            syncMode: "FORCE",
-                            "are.claim.values.regex": "true"
-                        },
-                        identityProviderAlias: "myodav",
-                        identityProviderMapper: "oidc-advanced-role-idp-mapper",
-                        name: "CRMRoleMapper",
+                let identityProviderMappers = await kcAdminClient.identityProviders.findMappers({ alias: node.providermapper.alias });
+                let exists = false;
 
+                for (let identityProviderMapper of identityProviderMappers) {
+                    if (identityProviderMapper.name === node.providermapper.identityProviderMapper.name) {
+                        exists = true;
                     }
-                })
+                }
+                if (!exists) {
+                    payload = await kcAdminClient.identityProviders.createMapper(node.providermapper)
+                    node.status({ shape: 'dot', fill: 'green', text: `${node.providermapper.identityProviderMapper.name} created` })
+                }else{
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${node.providermapper.identityProviderMapper.name} already exists` })
+
+                }
+
             }
 
             let newMsg = Object.assign(RED.util.cloneMessage(msg), {
