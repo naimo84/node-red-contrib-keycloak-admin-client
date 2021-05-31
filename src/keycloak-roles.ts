@@ -27,7 +27,7 @@ module.exports = function (RED: any) {
             node.msg = {};
             node.on('input', (msg, send, done) => {
                 node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
-                node.role = RED.util.evaluateNodeProperty(config.role, config.usertype, node, msg);
+                node.role = RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg);
                 
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode);
