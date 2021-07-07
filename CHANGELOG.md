@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.16](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.15...v0.0.16) (2021-07-07)
+
+
+### Features
+
+* input object instead of node property, debug logging ([cf6720f](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/cf6720f6743a9f71648c5a2517a6f43a3977a86a))
+
 ### [0.0.15](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.14...v0.0.15) (2021-05-31)
 
 
