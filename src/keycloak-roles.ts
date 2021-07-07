@@ -1,16 +1,16 @@
 
-import { NodeMessageInFlow, NodeMessage, Node } from "node-red";
-import { UserMessage, KeycloakConfig, mergeDeep } from "./helper";
+import { NodeMessage, Node } from "node-red";
+import { KeycloakConfig, nodelog } from "./helper";
 import KcAdminClient from 'keycloak-admin';
-import { compile } from "handlebars";
+var debug = require('debug')('keycloak:roles')
 
 module.exports = function (RED: any) {
-    function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
+    function getConfig(config: any, node?: any, msg?: any, input?: KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: node?.realmName || 'master',            
+            realmName: input?.realmName || 'master',            
             grantType: config?.grantType || 'password',
-            role: node?.role,
+            role: input?.role,
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
         } as KeycloakConfig;
@@ -26,23 +26,30 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
-                node.role = RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg);
-                
+                let input:KeycloakConfig = {                  
+                    realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
+                    role: RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg)
+                }
+              
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode);
+                processInput(node, msg, send, done, config.confignode,input);
             });
         }
         catch (err) {
             node.error('Error: ' + err.message);
             node.status({ fill: "red", shape: "ring", text: err.message })
+            nodelog({
+                debug,
+                action: "error",
+                message:  err.message , item: err , realm: ''
+            })
         }
     }
 
-    async function processInput(node: Node, msg: any, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node: Node, msg: any, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input:KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg)
+        let kcConfig = getConfig(configNode, node, msg,input)
         let payload = {};
 
         kcAdminClient.setConfig({
@@ -68,10 +75,21 @@ module.exports = function (RED: any) {
                         })
                         payload = await kcAdminClient.roles.findOneByName({ name: role })
                         node.status({ shape: 'dot', fill: 'green', text: `${role} created` })
+                        nodelog({
+                            debug,
+                            action: "create",
+                            message: "created", 
+                            item: role, realm: kcConfig.realmName
+                        })
                     }
                     else{
                         node.status({ shape: 'dot', fill: 'yellow', text: `${role} already exists` })
-
+                        nodelog({
+                            debug,
+                            action: "create",
+                            message: "already exists", 
+                            item: role, realm: kcConfig.realmName
+                        })
                     }
 
                     

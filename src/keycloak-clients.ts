@@ -1,22 +1,23 @@
 
 import { NodeMessageInFlow, NodeMessage, Node } from "node-red";
-import { ClientMessage, KeycloakConfig, mergeDeep } from "./helper";
+import { ClientMessage, KeycloakConfig, mergeDeep, nodelog } from "./helper";
 import KcAdminClient from 'keycloak-admin';
 import { compile } from "handlebars";
+var debug = require('debug')('keycloak:clients')
 
 module.exports = function (RED: any) {
-    function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
+    function getConfig(config: any, node?: any, msg?: any, input?:KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: node?.realmName || 'master',
+            realmName: input?.realmName || 'master',
             username: config?.credentials?.username,
             password: config?.credentials?.password,
             grantType: config?.grantType || 'password',
             clientId: config?.clientId || msg?.clientId || 'admin-cli',
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
-            client: node.client,
-            role: node.role,
+            client: input.client,
+            role: input.role,
         } as KeycloakConfig;
 
 
@@ -32,23 +33,30 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.client = RED.util.evaluateNodeProperty(config.client, config.clienttype, node, msg);
-                node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
-                node.role = RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg);
+                let input:KeycloakConfig = {
+                    client: RED.util.evaluateNodeProperty(config.client, config.clienttype, node, msg),
+                    realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
+                    role: RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg)
+                }
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode);
+                processInput(node, msg, send, done, config.confignode, input);
             });
         }
         catch (err) {
             node.error('Error: ' + err.message);
             node.status({ fill: "red", shape: "ring", text: err.message })
+            nodelog({
+                debug,
+                action: "error",
+                message:  err.message , item: err , realm: ''
+            })
         }
     }
 
-    async function processInput(node: Node, msg: ClientMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node: Node, msg: ClientMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input:KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg)
+        let kcConfig = getConfig(configNode, node, msg, input)
         let payload = {};
 
         kcAdminClient.setConfig({
@@ -70,11 +78,23 @@ module.exports = function (RED: any) {
                 try {
                     payload = Object.assign(client, await kcAdminClient.clients.create(client));
                     node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} created` })
+                    nodelog({
+                        debug,
+                        action: "create",
+                        message: "created", 
+                        item: client, realm: kcConfig.realmName
+                    })
                 } catch (err) {
                     let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
                     payload = payloadClients ? payloadClients[0] : {}
                     //@ts-ignore
                     node.status({ shape: 'dot', fill: 'yellow', text: `${client.clientId} already exists` })
+                    nodelog({
+                        debug,
+                        action: "create",
+                        message: "already exists", 
+                        item: client, realm: kcConfig.realmName
+                    })
                 }
             } else if (kcConfig.action === 'update') {
                 let client = kcConfig.client;
@@ -87,11 +107,23 @@ module.exports = function (RED: any) {
                 try {
                     payload = Object.assign(client, await kcAdminClient.clients.update({ id: client?.id }, client));
                     node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} updated` })
+                    nodelog({
+                        debug,
+                        action: "update",
+                        message: "updated", 
+                        item: client, realm: kcConfig.realmName
+                    })
                 } catch (err) {
                     let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
                     payload = payloadClients ? payloadClients[0] : {}
                     //@ts-ignore
                     node.status({ shape: 'dot', fill: 'yellow', text: `${client.clientId} already exists` })
+                    nodelog({
+                        debug,
+                        action: "update",
+                        message: "already exists", 
+                        item: client, realm: kcConfig.realmName
+                    })
                 }
             } else if (kcConfig.action === 'getSecret') {
                 let client = Object.assign(msg.payload, { realm: kcConfig.realmName }) as any;
@@ -114,6 +146,12 @@ module.exports = function (RED: any) {
                             ],
                         });
                         node.status({ shape: 'dot', fill: 'green', text: `role ${currentRole.name} added to ${kcConfig.client.name}` })
+                        nodelog({
+                            debug,
+                            action: "addServiceAccountRole",
+                            message: `role ${currentRole.name} added`, 
+                            item: kcConfig.client, realm: kcConfig.realmName
+                        })
                     }
                 }
             }

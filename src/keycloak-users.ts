@@ -5,12 +5,13 @@ import KcAdminClient from 'keycloak-admin';
 import { compile } from "handlebars";
 
 module.exports = function (RED: any) {
-    function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
+    function getConfig(config: any, node?: any, msg?: any, input?: KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: node?.realmName || 'master',            
+            realmName: input?.realmName || 'master',
             grantType: config?.grantType || 'password',
-            user: node?.user,
+            user: input?.user,
+            password: input?.password,
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
         } as KeycloakConfig;
@@ -20,29 +21,32 @@ module.exports = function (RED: any) {
     function usersNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
-       
-        node.action = config.action;       
+
+        node.action = config.action;
         node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.realmName = RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg);
-                node.user = RED.util.evaluateNodeProperty(config.user, config.usertype, node, msg);
-                node.password = RED.util.evaluateNodeProperty(config.password, config.passwordtype, node, msg);
+                let input: KeycloakConfig = {
+                    realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
+                    user: RED.util.evaluateNodeProperty(config.user, config.usertype, node, msg),
+                    password: RED.util.evaluateNodeProperty(config.password, config.passwordtype, node, msg)
+                }
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode);
+                processInput(node, msg, send, done, config.confignode,input);
             });
         }
         catch (err) {
             node.error('Error: ' + err.message);
             node.status({ fill: "red", shape: "ring", text: err.message })
+            
         }
     }
 
-    async function processInput(node: Node, msg: UserMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node: Node, msg: UserMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input: KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg)
+        let kcConfig = getConfig(configNode, node, msg,input)
         let payload = {};
 
         kcAdminClient.setConfig({
@@ -63,8 +67,8 @@ module.exports = function (RED: any) {
                     payload = Object.assign(user, await kcAdminClient.users.create(user));
                     node.status({ shape: 'dot', fill: 'green', text: `${user.username} created` })
                 } catch (err) {
-                    console.log(` ${err}` );
-                    
+                    console.log(` ${err}`);
+
                     let payloadClients = await kcAdminClient.users.find({ username: user?.username });
                     payload = payloadClients ? payloadClients[0] : {}
                     //@ts-ignore
@@ -89,7 +93,7 @@ module.exports = function (RED: any) {
                     }));
                     node.status({ shape: 'dot', fill: 'green', text: `${user.username} created` })
 
-                } catch (err) {     
+                } catch (err) {
                     let payloadClients = await kcAdminClient.users.find({ username: user?.username });
                     payload = payloadClients ? payloadClients[0] : {}
                     //@ts-ignore

@@ -15,6 +15,13 @@ export interface IcalNode extends Node {
     red: any;
 }
 
+export function nodelog(debugitem) {
+    const { message, action, debug, realm, item } = debugitem;
+    
+    debug(`--------------------------- ${realm} - ${action} - ${message} ---------------------------`);
+    debug(JSON.stringify({ message, action, realm, item }));
+}
+
 export function isObject(item) {
     return (item && typeof item === 'object' && !Array.isArray(item));
 }
@@ -38,27 +45,27 @@ export function mergeDeep(target, ...sources) {
 }
 
 export interface KeycloakConfig {
-    role: string | string[];
-    protocolMappers: ProtocolMapperRepresentation[];
-    protocol: string;
-    scopeName: string;
-    name: string;
-    baseUrl: string
-    realmName: string
-    username: string
-    password: string
-    grantType: GrantTypes
-    clientId: string
-    action: string
-    id: string;
-    client: ClientRepresentation;
-    provider: IdentityProviderRepresentation;
-    realm: RealmRepresentation
-    scope: ClientScopeRepresentation
-    protocolMapper: ProtocolMapperRepresentation;
-    providermapper: IdentityProviderMapperRepresentation;
-    component: ComponentRepresentation,
-    user: UserRepresentation
+    role?: string | string[];
+    protocolMappers?: ProtocolMapperRepresentation[];
+    protocol?: string;
+    scopeName?: string;
+    name?: string;
+    baseUrl?: string
+    realmName?: string
+    username?: string
+    password?: string
+    grantType?: GrantTypes
+    clientId?: string
+    action?: string
+    id?: string;
+    client?: ClientRepresentation;
+    provider?: IdentityProviderRepresentation;
+    realm?: RealmRepresentation
+    scope?: ClientScopeRepresentation
+    protocolMapper?: ProtocolMapperRepresentation;
+    providermapper?: IdentityProviderMapperRepresentation;
+    component?: ComponentRepresentation,
+    user?: UserRepresentation
 }
 
 function deepen(obj) {

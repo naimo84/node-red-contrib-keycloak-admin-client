@@ -11,38 +11,18 @@ export interface RealmMessage extends NodeMessageInFlow {
 }
 
 module.exports = function (RED: any) {
-    function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
+    function getConfig(config: any, node?: any, msg?: any, input?: KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: node?.realmName || 'master',
+            realmName: input?.realmName || 'master',
             username: config?.credentials?.username,
             password: config?.credentials?.password,
             grantType: config?.grantType || 'password',
             name: msg?.name || config?.name,
-            providermapper: node?.providermapper,
+            providermapper: input?.providermapper,
+            provider: input?.provider,
             action: msg?.action || node?.action || 'get'
         } as KeycloakConfig;
-
-        if (node?.providertype !== 'json') {
-            nodeConfig.provider = msg[node.provider]
-        } else {
-            nodeConfig.provider = JSON.parse(node?.provider)
-        }
-
-        switch (node?.realmNametype) {
-            case 'msg':
-                nodeConfig.realmName = msg[node.realmName]
-                break;
-            case 'str':
-                nodeConfig.realmName = node?.realmName
-                break;
-            case 'flow':
-                nodeConfig.realmName = node.context().flow.get(node.realmName)
-                break;
-            case 'global':
-                nodeConfig.realmName = node.context().global.get(node.realmName)
-                break;
-        }
 
         return nodeConfig;
     }
@@ -59,9 +39,14 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                node.providermapper = RED.util.evaluateNodeProperty(config.providermapper, config.providermappertype, node, msg);
+                let input: KeycloakConfig = {
+                    providermapper:RED.util.evaluateNodeProperty(config.providermapper, config.providermappertype, node, msg),
+                    provider:RED.util.evaluateNodeProperty(config.provider, config.providertype, node, msg),
+                    realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
+                }
+                
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode);
+                processInput(node, msg, send, done, config.confignode,input);
             });
         }
         catch (err) {
@@ -70,10 +55,10 @@ module.exports = function (RED: any) {
         }
     }
 
-    async function processInput(node, msg: RealmMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node, msg: RealmMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input: KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg)
+        let kcConfig = getConfig(configNode, node, msg,input)
         let payload = {};
 
         kcAdminClient.setConfig({

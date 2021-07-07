@@ -1,7 +1,8 @@
 import { NodeMessageInFlow, NodeMessage } from "node-red";
 import KcAdminClient from 'keycloak-admin';
-import { KeycloakConfig } from "./helper";
+import { KeycloakConfig, nodelog } from "./helper";
 import { compile } from "handlebars";
+var debug = require('debug')('keycloak:client-scopes')
 
 export interface ClientcomponentMessage extends NodeMessageInFlow {
     payload: {
@@ -11,44 +12,19 @@ export interface ClientcomponentMessage extends NodeMessageInFlow {
 }
 
 module.exports = function (RED: any) {
-    function getConfig(config: any, node?: any, msg?: any): KeycloakConfig {
+    function getConfig(config: any, node?: any, msg?: any, input?: KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: node?.realmName || 'master',
+            realmName: input?.realmName || 'master',
             username: config?.credentials?.username,
             password: config?.credentials?.password,
             grantType: config?.grantType || 'password',
             name: msg?.name || config?.name,
-            action: msg?.action || node?.action || 'get'           
+            action: msg?.action || node?.action || 'get'    ,
+            component: input.component,
+            protocolMapper:input.protocolMapper  
         } as KeycloakConfig;
-
-        if (node?.protocolMappertype !== 'json') {
-            nodeConfig.protocolMapper = msg[node.protocolMapper]
-        } else {
-            nodeConfig.protocolMapper = JSON.parse(node?.protocolMapper)
-        }
-
-        if (node?.componenttype !== 'json') {
-            nodeConfig.component = msg[node.component]
-        } else {
-            nodeConfig.component = JSON.parse(node?.component)
-        }
-
-        switch (node?.realmNametype) {
-            case 'msg':
-                nodeConfig.realmName = msg[node.realmName]
-                break;
-            case 'str':
-                nodeConfig.realmName = node?.realmName
-                break;
-            case 'flow':
-                nodeConfig.realmName = node.context().flow.get(node.realmName)
-                break;
-            case 'global':
-                nodeConfig.realmName = node.context().global.get(node.realmName)
-                break;
-        }
-
+      
         return nodeConfig;
     }
 
@@ -65,17 +41,29 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
+                let input: KeycloakConfig = {
+                    component:RED.util.evaluateNodeProperty(config.component, config.componentype, node, msg),                  
+                    protocolMapper:RED.util.evaluateNodeProperty(config.protocolMapper, config.protocolMappertype, node, msg),                  
+                    realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
+                }
+
+
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode);
+                processInput(node, msg, send, done, config.confignode,input);
             });
         }
         catch (err) {
             node.error('Error: ' + err.message);
             node.status({ fill: "red", shape: "ring", text: err.message })
+            nodelog({
+                debug,
+                action: "error",
+                message:  err.message , item: err , realm: ''
+            })
         }
     }
 
-    async function processInput(node, msg: ClientcomponentMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config) {
+    async function processInput(node, msg: ClientcomponentMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input:KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg)
