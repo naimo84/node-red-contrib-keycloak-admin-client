@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.17](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.16...v0.0.17) (2021-07-08)
+
+
+### Features
+
+* identityProviderMapper typescript and logging ([824c2bd](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/824c2bd086d5bfed3f59d6441c391f35ca9bdc91))
+
 ### [0.0.16](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.15...v0.0.16) (2021-07-07)
 
 
