@@ -63,7 +63,10 @@ export interface KeycloakConfig {
     realm?: RealmRepresentation
     scope?: ClientScopeRepresentation
     protocolMapper?: ProtocolMapperRepresentation;
-    providermapper?: IdentityProviderMapperRepresentation;
+    providermapper?: {
+        identityProviderMapper: IdentityProviderMapperRepresentation,
+        alias: string
+    },
     component?: ComponentRepresentation,
     user?: UserRepresentation
 }

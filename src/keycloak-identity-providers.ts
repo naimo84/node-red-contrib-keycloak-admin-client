@@ -1,7 +1,8 @@
 
 import { NodeMessageInFlow, NodeMessage } from "node-red";
-import { KeycloakConfig, mergeDeep } from "./helper";
+import { KeycloakConfig, mergeDeep, nodelog } from "./helper";
 import KcAdminClient from 'keycloak-admin';
+var debug = require('debug')('keycloak:identity-provider')
 
 export interface RealmMessage extends NodeMessageInFlow {
     payload: {
@@ -29,12 +30,8 @@ module.exports = function (RED: any) {
 
     function identityProviderNode(config: any) {
         RED.nodes.createNode(this, config);
-        let node = this;
-        node.realmName = config.realmName;
-        node.realmNametype = config.realmNametype;
-        node.action = config.action;
-        node.provider = config.provider;
-        node.providertype = config.providertype;
+        let node = this;      
+        node.action = config.action;       
         node.status({ text: `` })
         try {
             node.msg = {};
@@ -52,6 +49,11 @@ module.exports = function (RED: any) {
         catch (err) {
             node.error('Error: ' + err.message);
             node.status({ fill: "red", shape: "ring", text: err.message })
+            nodelog({
+                debug,
+                action: "error",
+                message:  err.message , item: err , realm: ''
+            })
         }
     }
 
@@ -83,23 +85,33 @@ module.exports = function (RED: any) {
                     }
                     node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
                 }
-            } else if (kcConfig.action === 'getMappers') {
-                payload = await kcAdminClient.identityProviders.findMappers({ alias: node.providermapper.alias });
-            } else if (kcConfig.action === 'addMapper') {
-                let identityProviderMappers = await kcAdminClient.identityProviders.findMappers({ alias: node.providermapper.alias });
+            } else if (kcConfig.action === 'getMappers') {                
+                payload = await kcAdminClient.identityProviders.findMappers({ alias: kcConfig.providermapper.alias });
+            } else if (kcConfig.action === 'addMapper') {              
+                let identityProviderMappers = await kcAdminClient.identityProviders.findMappers({ alias: kcConfig.providermapper.alias });
                 let exists = false;
 
                 for (let identityProviderMapper of identityProviderMappers) {
-                    if (identityProviderMapper.name === node.providermapper.identityProviderMapper.name) {
+                    
+                    if (identityProviderMapper.name === kcConfig.providermapper.identityProviderMapper.name) {
                         exists = true;
                     }
                 }
-                if (!exists) {
-                    payload = await kcAdminClient.identityProviders.createMapper(node.providermapper)
-                    node.status({ shape: 'dot', fill: 'green', text: `${node.providermapper.identityProviderMapper.name} created` })
-                }else{
-                    node.status({ shape: 'dot', fill: 'yellow', text: `${node.providermapper.identityProviderMapper.name} already exists` })
-
+                if (!exists) {                   
+                    payload = await kcAdminClient.identityProviders.createMapper(kcConfig.providermapper)                   
+                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.providermapper.identityProviderMapper.name} created` })
+                    nodelog({
+                        debug,
+                        action: "error",
+                        message:  "already exists", item:  kcConfig.providermapper , realm: ''
+                    })
+                }else{                   
+                    node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.providermapper.identityProviderMapper.name} already exists` })
+                    nodelog({
+                        debug,
+                        action: "error",
+                        message:  "already exists" , item: kcConfig.providermapper , realm: ''
+                    })
                 }
 
             }
@@ -115,6 +127,11 @@ module.exports = function (RED: any) {
         } catch (err) {
             node.status({ shape: 'dot', fill: 'red', text: `${err}` })
             if (done) done(err);
+            nodelog({
+                debug,
+                action: "error",
+                message:  err.message , item: err , realm: ''
+            })
         }
 
         setTimeout(() => node.status({ text: `` }), 10000)
