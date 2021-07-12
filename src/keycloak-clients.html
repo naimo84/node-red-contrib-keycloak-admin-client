@@ -16,6 +16,8 @@
                 clienttype: {},
                 role: {},
                 roletype: {},
+                scope: {},
+                scopetype: {},
                 action: {}
             },
             inputs: 1,
@@ -37,6 +39,10 @@
                 $("#node-input-realmName").typedInput({
                     types: ["str", "msg", "flow", "global"],
                     typeField: "#node-input-realmNametype"
+                });
+                $("#node-input-scope").typedInput({
+                    types: ["str", "msg","json"],
+                    typeField: "#node-input-scopetype"
                 });
                 $("#node-input-role").typedInput({
                     types: ["str", "msg"],
@@ -124,6 +130,11 @@
         <input type="text" id="node-input-role">
         <input type="text" id="node-input-roletype">
     </div>  
+    <div class="form-row elastic">
+        <label for="node-input-scope"><i class="fa fa-globe"></i> <span>client scope definition</span></label>
+        <input type="text" id="node-input-scope">
+        <input type="text" id="node-input-scopetype">
+    </div>  
     <div class="form-row event">
         <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
         <select id="node-input-action">          
@@ -132,6 +143,7 @@
           <option value="update">update</option>
           <option value="addServiceAccountRole">addServiceAccountRole</option>
           <option value="getSecret">getSecret</option>
+          <option value="addDefaultClientScope">addDefaultClientScope</option>
         </select>
     </div>
 

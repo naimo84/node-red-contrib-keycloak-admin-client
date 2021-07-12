@@ -6,7 +6,7 @@ import { compile } from "handlebars";
 var debug = require('debug')('keycloak:clients')
 
 module.exports = function (RED: any) {
-    function getConfig(config: any, node?: any, msg?: any, input?:KeycloakConfig): KeycloakConfig {
+    function getConfig(config: any, node?: any, msg?: any, input?: KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
             realmName: input?.realmName || 'master',
@@ -18,6 +18,7 @@ module.exports = function (RED: any) {
             action: msg?.action || node?.action || 'get',
             client: input.client,
             role: input.role,
+            scope: input.scope,
         } as KeycloakConfig;
 
 
@@ -33,10 +34,11 @@ module.exports = function (RED: any) {
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                let input:KeycloakConfig = {
+                let input: KeycloakConfig = {
                     client: RED.util.evaluateNodeProperty(config.client, config.clienttype, node, msg),
                     realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
-                    role: RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg)
+                    role: RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg),
+                    scope: RED.util.evaluateNodeProperty(config.scope, config.scopetype, node, msg)
                 }
                 send = send || function () { node.send.apply(node, arguments) }
                 processInput(node, msg, send, done, config.confignode, input);
@@ -48,12 +50,12 @@ module.exports = function (RED: any) {
             nodelog({
                 debug,
                 action: "error",
-                message:  err.message , item: err , realm: ''
+                message: err.message, item: err, realm: ''
             })
         }
     }
 
-    async function processInput(node: Node, msg: ClientMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input:KeycloakConfig) {
+    async function processInput(node: Node, msg: ClientMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input: KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
         let kcConfig = getConfig(configNode, node, msg, input)
@@ -81,7 +83,7 @@ module.exports = function (RED: any) {
                     nodelog({
                         debug,
                         action: "create",
-                        message: "created", 
+                        message: "created",
                         item: client, realm: kcConfig.realmName
                     })
                 } catch (err) {
@@ -92,7 +94,7 @@ module.exports = function (RED: any) {
                     nodelog({
                         debug,
                         action: "create",
-                        message: "already exists", 
+                        message: "already exists",
                         item: client, realm: kcConfig.realmName
                     })
                 }
@@ -110,7 +112,7 @@ module.exports = function (RED: any) {
                     nodelog({
                         debug,
                         action: "update",
-                        message: "updated", 
+                        message: "updated",
                         item: client, realm: kcConfig.realmName
                     })
                 } catch (err) {
@@ -121,7 +123,7 @@ module.exports = function (RED: any) {
                     nodelog({
                         debug,
                         action: "update",
-                        message: "already exists", 
+                        message: "already exists",
                         item: client, realm: kcConfig.realmName
                     })
                 }
@@ -145,15 +147,25 @@ module.exports = function (RED: any) {
                                 },
                             ],
                         });
-                        node.status({ shape: 'dot', fill: 'green', text: `role ${currentRole.name} added to ${kcConfig.client.name}` })
+                        node.status({ shape: 'dot', fill: 'green', text: `role ${currentRole.name} added to ${kcConfig.client.name || kcConfig.client.clientId}` })
                         nodelog({
                             debug,
                             action: "addServiceAccountRole",
-                            message: `role ${currentRole.name} added`, 
+                            message: `role ${currentRole.name} added`,
                             item: kcConfig.client, realm: kcConfig.realmName
                         })
                     }
                 }
+            }
+            else if (kcConfig.action === 'addDefaultClientScope') {
+                await kcAdminClient.clients.addDefaultClientScope({ id: kcConfig.client.id, clientScopeId: kcConfig.scope.id });
+                node.status({ shape: 'dot', fill: 'green', text: `client scope ${kcConfig.scope.id} added to ${kcConfig.client.name || kcConfig.client.clientId}` })
+                nodelog({
+                    debug,
+                    action: "addDefaultClientScope",
+                    message: `client scope ${kcConfig.scope.id} added`,
+                    item: kcConfig.client, realm: kcConfig.realmName
+                })
             }
 
             let newMsg = Object.assign(RED.util.cloneMessage(msg), {
@@ -167,6 +179,12 @@ module.exports = function (RED: any) {
         } catch (err) {
             node.status({ shape: 'dot', fill: 'red', text: `${err}` })
             if (done) done(err);
+            nodelog({
+                debug,
+                action: "",
+                message: err,
+                item: err, realm: kcConfig.realmName
+            })
         }
         setTimeout(() => node.status({ text: `` }), 10000)
     }
