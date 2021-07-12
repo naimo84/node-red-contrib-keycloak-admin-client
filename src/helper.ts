@@ -46,6 +46,7 @@ export function mergeDeep(target, ...sources) {
 
 export interface KeycloakConfig {
     role?: string | string[];
+    compositerole?: string | string[];
     protocolMappers?: ProtocolMapperRepresentation[];
     protocol?: string;
     scopeName?: string;

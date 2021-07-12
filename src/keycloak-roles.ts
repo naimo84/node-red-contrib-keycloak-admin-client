@@ -8,9 +8,10 @@ module.exports = function (RED: any) {
     function getConfig(config: any, node?: any, msg?: any, input?: KeycloakConfig): KeycloakConfig {
         const nodeConfig = {
             baseUrl: config.useenv ? process.env[config.baseUrlEnv] : config.baseUrl,
-            realmName: input?.realmName || 'master',            
+            realmName: input?.realmName || 'master',
             grantType: config?.grantType || 'password',
             role: input?.role,
+            compositerole: input?.compositerole,
             name: msg?.name || config?.name,
             action: msg?.action || node?.action || 'get',
         } as KeycloakConfig;
@@ -20,19 +21,20 @@ module.exports = function (RED: any) {
     function rolesNode(config: any) {
         RED.nodes.createNode(this, config);
         let node = this;
-       
-        node.action = config.action;       
+
+        node.action = config.action;
         node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
-                let input:KeycloakConfig = {                  
+                let input: KeycloakConfig = {
                     realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
-                    role: RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg)
+                    role: RED.util.evaluateNodeProperty(config.role, config.roletype, node, msg),
+                    compositerole: RED.util.evaluateNodeProperty(config.compositerole, config.compositeroletype, node, msg)
                 }
-              
+
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode,input);
+                processInput(node, msg, send, done, config.confignode, input);
             });
         }
         catch (err) {
@@ -41,15 +43,15 @@ module.exports = function (RED: any) {
             nodelog({
                 debug,
                 action: "error",
-                message:  err.message , item: err , realm: ''
+                message: err.message, item: err, realm: ''
             })
         }
     }
 
-    async function processInput(node: Node, msg: any, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input:KeycloakConfig) {
+    async function processInput(node: Node, msg: any, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input: KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg,input)
+        let kcConfig = getConfig(configNode, node, msg, input)
         let payload = {};
 
         kcAdminClient.setConfig({
@@ -64,7 +66,7 @@ module.exports = function (RED: any) {
                 if (msg?.payload?.role) {
                     role = msg.payload.role
                 }
-              
+
                 try {
                     let payload = await kcAdminClient.roles.findOneByName({ name: role })
                     if (!payload) {
@@ -78,26 +80,30 @@ module.exports = function (RED: any) {
                         nodelog({
                             debug,
                             action: "create",
-                            message: "created", 
+                            message: "created",
                             item: role, realm: kcConfig.realmName
                         })
                     }
-                    else{
+                    else {
                         node.status({ shape: 'dot', fill: 'yellow', text: `${role} already exists` })
                         nodelog({
                             debug,
                             action: "create",
-                            message: "already exists", 
+                            message: "already exists",
                             item: role, realm: kcConfig.realmName
                         })
                     }
 
-                    
-                } catch (err) {                         
+
+                } catch (err) {
                     //@ts-ignore
                     node.status({ shape: 'dot', fill: 'yellow', text: err })
                 }
-            } 
+            } else if (kcConfig.action === 'createComposite') {              
+                let currentRole = await kcAdminClient.roles.findOneByName({ name: kcConfig.role.toString() });                
+                let compositeRole = await kcAdminClient.roles.findOneByName({ name: kcConfig.compositerole.toString() });
+                await kcAdminClient.roles.createComposite({ roleId: compositeRole.id }, [currentRole]);
+            }
 
             let newMsg = Object.assign(RED.util.cloneMessage(msg), {
                 payload: payload,
@@ -112,7 +118,7 @@ module.exports = function (RED: any) {
             if (done) done(err);
         }
         setTimeout(() => node.status({ text: `` }), 10000)
-    }   
+    }
 
     RED.nodes.registerType("keycloak-roles", rolesNode);
 }

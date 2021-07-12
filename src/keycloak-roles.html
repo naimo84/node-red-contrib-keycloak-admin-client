@@ -6,7 +6,7 @@
         .registerType('keycloak-roles', {
             category: 'keycloak',
             defaults: {
-                name:{}   ,
+                name: {},
                 confignode: {
                     value: "",
                     type: "keycloak-config",
@@ -15,8 +15,10 @@
                 realmName: {},
                 realmNametype: {},
                 role: {},
-                roletype: {},                
-                action:{}
+                roletype: {},
+                compositerole: {},
+                compositeroletype: {},
+                action: {}
             },
             inputs: 1,
             outputs: 1,
@@ -35,13 +37,17 @@
             oneditprepare: function () {
                 var node = this;
                 $("#node-input-realmName").typedInput({
-                    types: ["str","msg", "flow","global"],
+                    types: ["str", "msg", "flow", "global"],
                     typeField: "#node-input-realmNametype"
-                }); 
+                });
                 $("#node-input-role").typedInput({
-                    types: ["msg", "json", "str"],
+                    types: ["str", "json", "msg"],
                     typeField: "#node-input-roletype"
-                });              
+                });
+                $("#node-input-compositerole").typedInput({
+                    types: ["str", "json", "msg"],
+                    typeField: "#node-input-compositeroletype"
+                });
             }
         });
 </script>
@@ -86,11 +92,18 @@
         <input type="text" id="node-input-role" style="width: 70%">
         <input type="text" id="node-input-roletype">
     </div>    
+    <div class="form-row elastic">
+        <label for="node-input-compositerole"><i class="fa fa-globe"></i> <span>composite role definition</span></label>
+        <input type="text" id="node-input-compositerole" style="width: 70%">
+        <input type="text" id="node-input-compositeroletype">
+    </div>   
+
     <div class="form-row event">
         <label for="node-input-action"><i class="fa fa-clock-o"></i> <span>action</span></label>        
         <select id="node-input-action">          
           <option value="get">get</option>
-          <option value="create">create</option>           
+          <option value="create">create</option> 
+          <option value="createComposite">createComposite</option> 
         </select>
     </div>
 
