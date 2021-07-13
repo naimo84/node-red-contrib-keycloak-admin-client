@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.20](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.19...v0.0.20) (2021-07-13)
+
+
+### Features
+
+* composite roles ([a9e4214](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/a9e421435f9d8d15f9f38308a28602af11f57231))
+
+
+### Bug Fixes
+
+* convertToArray an error handling of create client ([dddff57](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/dddff574567b8d1514d1457e44bf436a8dad771d))
+
 ### [0.0.19](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.18...v0.0.19) (2021-07-12)
 
 ### [0.0.18](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.17...v0.0.18) (2021-07-12)
