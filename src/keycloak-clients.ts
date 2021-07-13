@@ -77,19 +77,29 @@ module.exports = function (RED: any) {
                 const template = compile(JSON.stringify(client));
                 client = JSON.parse(template({ msg: msg }));
 
-                try {
-                    payload = Object.assign(client, await kcAdminClient.clients.create(client));
-                    node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} created` })
-                    nodelog({
-                        debug,
-                        action: "create",
-                        message: "created",
-                        item: client, realm: kcConfig.realmName
-                    })
-                } catch (err) {
-                    let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
-                    payload = payloadClients ? payloadClients[0] : {}
-                    //@ts-ignore
+                let clients = await kcAdminClient.clients.find({ clientId: client.clientId, max: 1 })
+                payload = clients.length > 0 ? clients[0] : {}
+                if (!payload || !payload.hasOwnProperty('clientId')) {
+                    try {
+                        payload = Object.assign(client, await kcAdminClient.clients.create(client));
+                        node.status({ shape: 'dot', fill: 'green', text: `${client.clientId} created` })
+                        nodelog({
+                            debug,
+                            action: "create",
+                            message: "created",
+                            item: client, realm: kcConfig.realmName
+                        })
+                    } catch (err) {
+                        //@ts-ignore
+                        node.status({ shape: 'dot', fill: 'yellow', text: `${client.clientId} already exists` })
+                        nodelog({
+                            debug,
+                            action: "create",
+                            message: "already exists",
+                            item: client, realm: kcConfig.realmName
+                        })
+                    }
+                } else {
                     node.status({ shape: 'dot', fill: 'yellow', text: `${client.clientId} already exists` })
                     nodelog({
                         debug,
@@ -191,7 +201,7 @@ module.exports = function (RED: any) {
 
 
     function convertToArray(obj): string[] {
-        if (obj instanceof Array) {
+        if (Array.isArray(obj)) {
             return obj;
         } else {
             return [obj];
