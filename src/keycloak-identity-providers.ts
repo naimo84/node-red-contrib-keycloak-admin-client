@@ -30,20 +30,20 @@ module.exports = function (RED: any) {
 
     function identityProviderNode(config: any) {
         RED.nodes.createNode(this, config);
-        let node = this;      
-        node.action = config.action;       
+        let node = this;
+        node.action = config.action;
         node.status({ text: `` })
         try {
             node.msg = {};
             node.on('input', (msg, send, done) => {
                 let input: KeycloakConfig = {
-                    providermapper:RED.util.evaluateNodeProperty(config.providermapper, config.providermappertype, node, msg),
-                    provider:RED.util.evaluateNodeProperty(config.provider, config.providertype, node, msg),
+                    providermapper: RED.util.evaluateNodeProperty(config.providermapper, config.providermappertype, node, msg),
+                    provider: RED.util.evaluateNodeProperty(config.provider, config.providertype, node, msg),
                     realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
                 }
-                
+
                 send = send || function () { node.send.apply(node, arguments) }
-                processInput(node, msg, send, done, config.confignode,input);
+                processInput(node, msg, send, done, config.confignode, input);
             });
         }
         catch (err) {
@@ -52,7 +52,7 @@ module.exports = function (RED: any) {
             nodelog({
                 debug,
                 action: "error",
-                message:  err.message , item: err , realm: ''
+                message: err.message, item: err, realm: ''
             })
         }
     }
@@ -60,7 +60,7 @@ module.exports = function (RED: any) {
     async function processInput(node, msg: RealmMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input: KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg,input)
+        let kcConfig = getConfig(configNode, node, msg, input)
         let payload = {};
 
         kcAdminClient.setConfig({
@@ -70,47 +70,67 @@ module.exports = function (RED: any) {
             if (!kcConfig.action || kcConfig.action === 'get') {
                 payload = await kcAdminClient.identityProviders.find();
             } else if (kcConfig.action === 'create') {
+
                 try {
                     //@ts-ignore
                     if (msg.payload?.provider) {
                         //@ts-ignore
                         kcConfig.provider = mergeDeep(kcConfig.provider, msg.payload.provider)
                     }
-
-                    payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
-                    node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.provider.displayName} created` })
+                    payload = await kcAdminClient.identityProviders.findOne({ alias: kcConfig.provider.alias })
+                    if (!payload) {
+                        payload = await kcAdminClient.identityProviders.create(kcConfig.provider)
+                        node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.provider.displayName} created` })
+                        nodelog({
+                            debug,
+                            action: "create",
+                            message: "created",
+                            item: kcConfig.provider, realm: kcConfig.realmName
+                        })
+                    } else {
+                        payload = {
+                            created: false
+                        }
+                        node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
+                        nodelog({
+                            debug,
+                            action: "create",
+                            message: "already exists",
+                            item: kcConfig.provider, realm: kcConfig.realmName
+                        })
+                    }
                 } catch {
                     payload = {
                         created: false
                     }
                     node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.provider.displayName} already exists` })
                 }
-            } else if (kcConfig.action === 'getMappers') {                
+            } else if (kcConfig.action === 'getMappers') {
                 payload = await kcAdminClient.identityProviders.findMappers({ alias: kcConfig.providermapper.alias });
-            } else if (kcConfig.action === 'addMapper') {              
+            } else if (kcConfig.action === 'addMapper') {
                 let identityProviderMappers = await kcAdminClient.identityProviders.findMappers({ alias: kcConfig.providermapper.alias });
                 let exists = false;
 
                 for (let identityProviderMapper of identityProviderMappers) {
-                    
+
                     if (identityProviderMapper.name === kcConfig.providermapper.identityProviderMapper.name) {
                         exists = true;
                     }
                 }
-                if (!exists) {                   
-                    payload = await kcAdminClient.identityProviders.createMapper(kcConfig.providermapper)                   
+                if (!exists) {
+                    payload = await kcAdminClient.identityProviders.createMapper(kcConfig.providermapper)
                     node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.providermapper.identityProviderMapper.name} created` })
                     nodelog({
                         debug,
                         action: "error",
-                        message:  "already exists", item:  kcConfig.providermapper , realm: ''
+                        message: "already exists", item: kcConfig.providermapper, realm: ''
                     })
-                }else{                   
+                } else {
                     node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.providermapper.identityProviderMapper.name} already exists` })
                     nodelog({
                         debug,
                         action: "error",
-                        message:  "already exists" , item: kcConfig.providermapper , realm: ''
+                        message: "already exists", item: kcConfig.providermapper, realm: ''
                     })
                 }
 
@@ -130,7 +150,7 @@ module.exports = function (RED: any) {
             nodelog({
                 debug,
                 action: "error",
-                message:  err.message , item: err , realm: ''
+                message: err.message, item: err, realm: ''
             })
         }
 
