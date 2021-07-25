@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.21](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.20...v0.0.21) (2021-07-25)
+
+
+### Features
+
+* check if IDP already exists ([59a8a00](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/59a8a00dc354d061eb84d2f7e4171b08b25f1b1d))
+* update users ([4abd844](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4abd844cae741eb551c29f3cf93ccb6fcd1baf6b))
+
 ### [0.0.20](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.19...v0.0.20) (2021-07-13)
 
 
