@@ -138,8 +138,14 @@ module.exports = function (RED: any) {
                     })
                 }
             } else if (kcConfig.action === 'getSecret') {
-                let client = Object.assign(msg.payload, { realm: kcConfig.realmName }) as any;
-                let secret = await kcAdminClient.clients.getClientSecret(client)
+                let client = kcConfig.client;
+                if (msg?.payload?.client) {
+                    client = mergeDeep(client, msg.payload.client)
+                }
+                let payloadClients = await kcAdminClient.clients.find({ clientId: client?.clientId });
+                client = payloadClients ? payloadClients[0] : {}
+
+                let secret = await kcAdminClient.clients.getClientSecret({ id: client.id })
                 payload = Object.assign(client, { secret: secret.value })
             } else if (kcConfig.action === 'addServiceAccountRole') {
                 const serviceAccountUser = await kcAdminClient.clients.getServiceAccountUser({ id: kcConfig.client.id });
