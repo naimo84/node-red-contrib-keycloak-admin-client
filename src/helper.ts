@@ -101,7 +101,7 @@ export interface ClientMessage extends NodeMessageInFlow {
 }
 
 export interface UserMessage extends NodeMessageInFlow {
-    payload: {
+    
         user: UserRepresentation;
-    }
+    
 }

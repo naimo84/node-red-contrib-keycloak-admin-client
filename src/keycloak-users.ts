@@ -55,12 +55,24 @@ module.exports = function (RED: any) {
         });
         try {
             if (!kcConfig.action || kcConfig.action === 'get') {
-                payload = await kcAdminClient.users.find();
+                let user = kcConfig.user;
+
+                if (msg?.user) {
+                    user = Object.assign(user, msg.user)
+                }
+                const template = compile(JSON.stringify(user));
+                user = JSON.parse(template({ msg: msg }));
+                if (!user || (!user['search'] && !user['username']))
+                    //@ts-ignore
+                    payload = await kcAdminClient.users.find();
+                else
+                    //@ts-ignore
+                    payload = await kcAdminClient.users.find(JSON.parse(`{ "${!!user['search'] ? 'search' : 'username'}": "${!!user['search'] ? user?.search : user?.username}" }`));
 
             } else if (kcConfig.action === 'create') {
                 let user = kcConfig.user;
-                if (msg?.payload?.user) {
-                    user = mergeDeep(user || {}, msg.payload.user)
+                if (msg?.user) {
+                    user = mergeDeep(user || {}, msg.user)
                 }
                 const template = compile(JSON.stringify(user));
                 user = JSON.parse(template({ msg: msg }));
@@ -78,8 +90,8 @@ module.exports = function (RED: any) {
             } else if (kcConfig.action === 'resetPassword') {
                 let user = kcConfig.user;
                 let password = kcConfig.password;
-                if (msg?.payload?.user) {
-                    user = Object.assign(user, msg.payload.user)
+                if (msg?.user) {
+                    user = Object.assign(user, msg.user)
                 }
                 const template = compile(JSON.stringify(user));
                 user = JSON.parse(template({ msg: msg }));
@@ -103,26 +115,20 @@ module.exports = function (RED: any) {
             } else if (kcConfig.action === 'update') {
                 let user = kcConfig.user;
 
-                if (msg?.payload?.user) {
-                    user = Object.assign(user, msg.payload.user)
+                if (msg.user) {
+                    user = mergeDeep(user, msg.user)
                 }
                 const template = compile(JSON.stringify(user));
                 user = JSON.parse(template({ msg: msg }));
                 try {
-                    //@ts-ignore
-                    let users = await kcAdminClient.users.find(JSON.parse(`{ "${!!user['search']  ? 'search' : 'username'}": "${!!user['search']  ? user?.search : user?.username}" }`));
-                    for (let client of users) {
-                        //@ts-ignore
-                        delete user.search;
-                        payload = Object.assign(user, await kcAdminClient.users.update({ id: client.id }, user))
-                        node.status({ shape: 'dot', fill: 'green', text: `${user.username} updated` })
-                        nodelog({
-                            debug,
-                            action: "update",
-                            message: "updated",
-                            item: client, realm: kcConfig.realmName
-                        })
-                    }
+                    payload = Object.assign(user, await kcAdminClient.users.update({ id: user.id }, user))
+                    node.status({ shape: 'dot', fill: 'green', text: `${user.username} updated` })
+                    nodelog({
+                        debug,
+                        action: "update",
+                        message: "updated",
+                        item: user, realm: kcConfig.realmName
+                    })
                 } catch (err) {
                     let payloadClients = await kcAdminClient.users.find({ username: user?.username });
                     payload = payloadClients ? payloadClients[0] : {}
