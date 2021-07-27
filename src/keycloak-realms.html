@@ -28,7 +28,7 @@
                     return this.confignode.name;
                 }
 
-                return "realms";
+                return `realms - ${this.action}`;
             },
             icon: "icon.svg",
             paletteLabel: "realms",
@@ -88,6 +88,7 @@
           <option value="create">create</option>
           <option value="getExecutions">getExecutions</option>
           <option value="updateExecutionConfig">updateExecutionConfig</option>
+          <option value="clearRealmCache">clearRealmCache</option>
         </select>
     </div>
     <div class="form-row elastic">

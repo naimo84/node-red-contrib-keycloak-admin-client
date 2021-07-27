@@ -137,6 +137,14 @@ module.exports = function (RED: any) {
                 })
                 node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
 
+            }else if (kcConfig.action === 'clearRealmCache') {
+                let token = await kcAdminClient.getAccessToken()
+                await axios({
+                    baseURL: `${kcConfig.baseUrl}/admin/realms/${kcConfig.realmName}/clear-realm-cache`,
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    method: 'POST'                    
+                })
+                node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.realmName} clear-realm-cache` })
             }
 
             let newMsg = Object.assign(RED.util.cloneMessage(msg), {
