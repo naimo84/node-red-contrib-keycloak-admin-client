@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.24](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.23...v0.0.24) (2021-07-30)
+
+
+### Features
+
+* update realms ([426225c](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/426225c83c3b981dacea8fe131a0e05dbec84eb2))
+
 ### [0.0.23](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.22...v0.0.23) (2021-07-27)
 
 
