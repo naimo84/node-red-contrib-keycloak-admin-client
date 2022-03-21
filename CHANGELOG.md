@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### 0.0.25 (2022-03-21)
+
+
+### Features
+
+* add addDefaultClientScope ([c215a1c](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/c215a1c35a3567cc4e28d91bdc38f3f87367ad8d))
+* add roles and identityprovidermappers ([9fab5c8](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/9fab5c88b54d4c9142525ecd46ba3be519dbbf84))
+* add serviceaccount + sa-roles ([31f3706](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/31f3706290dbdfb15ed834a9480fdcd1211ed209))
+* added keycloak users ([2b9d998](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/2b9d998bcb2d6b9c77f760dc89bcf6b42eb59b7a))
+* check if IDP already exists ([59a8a00](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/59a8a00dc354d061eb84d2f7e4171b08b25f1b1d))
+* clear realm cache ([68c0d0b](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/68c0d0b4cf6e6ce881f75868996728a2f842f125))
+* clone input msg ([d137a0b](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/d137a0be6c388d6d85c3e4b0b39d91ee560bf3f8))
+* composite roles ([a9e4214](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/a9e421435f9d8d15f9f38308a28602af11f57231))
+* extend gitignore tgz ([4d9a15f](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4d9a15f5950a81e7fa429b709907af3c555ec0ab))
+* identityProvider, components, one step closer to working version ([74a50c9](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/74a50c9de1041498f5971128c504b45259c965df))
+* identityProviderMapper typescript and logging ([824c2bd](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/824c2bd086d5bfed3f59d6441c391f35ca9bdc91))
+* initial commit ([e0d2355](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/e0d2355282735dca7cfb191d795231b423ec7f09))
+* input object instead of node property, debug logging ([cf6720f](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/cf6720f6743a9f71648c5a2517a6f43a3977a86a))
+* most of the properties are configurable via str,msg,flow,global ([3a620b5](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/3a620b5bb5c80474c8bb1a29d2f30399474ca1d9))
+* node status for created / exists ([56aa661](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/56aa6617e57e05a8855d21ac7d63eb30ab68f2bb))
+* RED.util.evaluateNodeProperty ([aca1f45](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/aca1f45078e416ecd08c72fbf0f5f3b287cd8bec))
+* roles can be an array ([c99168d](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/c99168da6e66aba26bcc368992b965e523c264e7))
+* update realms ([426225c](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/426225c83c3b981dacea8fe131a0e05dbec84eb2))
+* update users ([25882bb](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/25882bb008cf28d8df7e46ea0488c78ae7ba204c))
+* update users ([4abd844](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4abd844cae741eb551c29f3cf93ccb6fcd1baf6b))
+* use env for url, user and password ([a2c2f42](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/a2c2f42a29bbe7a9ee351a98725fa9021624172a))
+* use env for url, user and password ([e8576b6](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/e8576b66180d0973ee165a8d39a2e811026ed544))
+* using mergeDeep instead of object.assign ([4d471d8](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4d471d8e3edf8b64043fc6b39e4cd5cb0dc9a193))
+
+
+### Bug Fixes
+
+* convertToArray an error handling of create client ([dddff57](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/dddff574567b8d1514d1457e44bf436a8dad771d))
+* input undefined ([78ff5ba](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/78ff5ba3e2de7ad03253351723fd3d39b604d7fb))
+* minor fixes for realName ([57c4f62](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/57c4f62b9c8255729aadb6cf9185ce6c21a55e37))
+* node.role has wrong roletype for evaluateNodeProperty ([4182929](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/4182929d0a261b91437f67034bd99165cae42a4e))
+* realmName instead of realname ([88ef907](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/88ef907e42af7214cc9c2bf6be8997de668a8575))
+* roles as array ([19313e6](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/19313e655a4008263a6545c9ab0293877c32fdc3))
+* users get user from node ([f5f89b7](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/commit/f5f89b71475cf1c44f84c05b3e45e6da8a1786e8))
+
 ### [0.0.24](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.23...v0.0.24) (2021-07-30)
 
 
