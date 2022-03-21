@@ -66,7 +66,7 @@ module.exports = function (RED: any) {
     async function processInput(node, msg: ClientcomponentMessage, send: (msg: NodeMessage | NodeMessage[]) => void, done: (err?: Error) => void, config, input:KeycloakConfig) {
         let configNode = RED.nodes.getNode(config);
         let kcAdminClient = await configNode.getKcAdminClient() as KcAdminClient;
-        let kcConfig = getConfig(configNode, node, msg)
+        let kcConfig = getConfig(configNode, node, msg,input)
         let payload = {};
         kcAdminClient.setConfig({
             realmName: kcConfig.realmName,
