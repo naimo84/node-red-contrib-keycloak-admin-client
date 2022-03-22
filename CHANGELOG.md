@@ -2,6 +2,8 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.26](https://github.com/naimo84/node-red-contrib-keycloak-admin-client/compare/v0.0.25...v0.0.26) (2022-03-22)
+
 ### 0.0.25 (2022-03-21)
 
 
