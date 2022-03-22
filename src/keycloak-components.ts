@@ -24,6 +24,7 @@ module.exports = function (RED: any) {
             component: input.component,
             protocolMapper:input.protocolMapper  
         } as KeycloakConfig;
+    
       
         return nodeConfig;
     }
@@ -42,9 +43,9 @@ module.exports = function (RED: any) {
             node.msg = {};
             node.on('input', (msg, send, done) => {
                 let input: KeycloakConfig = {
-                    component:RED.util.evaluateNodeProperty(config.component, config.componentype, node, msg),                  
-                    protocolMapper:RED.util.evaluateNodeProperty(config.protocolMapper, config.protocolMappertype, node, msg),                  
-                    realmName: RED.util.evaluateNodeProperty(config.realmName, config.realmNametype, node, msg),
+                    component:RED.util.evaluateNodeProperty(node.component, node.componenttype, node, msg),                  
+                    protocolMapper:RED.util.evaluateNodeProperty(node.protocolMapper, node.protocolMappertype, node, msg),                  
+                    realmName: RED.util.evaluateNodeProperty(node.realmName, node.realmNametype, node, msg),
                 }
 
 
@@ -86,11 +87,10 @@ module.exports = function (RED: any) {
                 if (!exists) {
                     try {
                         const template = compile(JSON.stringify(kcConfig.component));
-                        kcConfig.component = JSON.parse(template({ msg: msg }));
-                        let compId = await kcAdminClient.components.create(kcConfig.component)
+                        kcConfig.component = JSON.parse(template({ msg: msg }));          
+                        let compId = await kcAdminClient.components.create(kcConfig.component)                    
                         node.status({ shape: 'dot', fill: 'green', text: `${kcConfig.component.name} created` })
-
-                    } catch (err) {                        
+                    } catch (err) {                                        
                         node.status({ shape: 'dot', fill: 'yellow', text: `${kcConfig.component.name} already exists` })
                     }
                     let components2 = await kcAdminClient.components.find();
