@@ -161,7 +161,7 @@ module.exports = function (RED: any) {
                 await axios({
                     baseURL: `${kcConfig.baseUrl}/admin/realms/${kcConfig.realmName}/authentication/executions/${msg.payload.execution_id}/config`,
                     headers: { 'Authorization': `Bearer ${token}` },
-                    method: 'POST',
+                    method: 'PUT',
                     data: msg.payload.config
                 })
                 node.status({ shape: 'dot', fill: 'green', text: `${msg.payload.execution_id} updated` })
